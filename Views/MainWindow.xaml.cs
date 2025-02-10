@@ -1,6 +1,6 @@
-﻿using PdfTextExtractor.ViewModels;
+﻿using PdfProcessor.ViewModels;
 
-namespace PdfTextExtractor.Views;
+namespace PdfProcessor.Views;
 
     public partial class MainWindow
     {

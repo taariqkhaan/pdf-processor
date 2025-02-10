@@ -1,9 +1,6 @@
 ﻿using System.Windows.Input;
-using System.Runtime.InteropServices;
 
-
-
-namespace PdfTextExtractor.Models
+namespace PdfProcessor.Helpers
 {
     public class RelayCommand : ICommand
     {

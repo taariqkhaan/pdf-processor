@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfTextExtractor", "PdfTextExtractor.csproj", "{9F79F8F5-AD35-4A45-AB58-5B8073AB3E79}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfProcessor", "PdfProcessor.csproj", "{9F79F8F5-AD35-4A45-AB58-5B8073AB3E79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

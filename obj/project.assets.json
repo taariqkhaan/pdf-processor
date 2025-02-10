@@ -483,24 +483,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Tariq\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\tkhan\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\GitHub\\PdfTextExtractor\\PdfTextExtractor.csproj",
-      "projectName": "PdfTextExtractor",
-      "projectPath": "E:\\GitHub\\PdfTextExtractor\\PdfTextExtractor.csproj",
-      "packagesPath": "C:\\Users\\Tariq\\.nuget\\packages\\",
-      "outputPath": "E:\\GitHub\\PdfTextExtractor\\obj\\",
+      "projectUniqueName": "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj",
+      "projectName": "PdfProcessor",
+      "projectPath": "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj",
+      "packagesPath": "C:\\Users\\tkhan\\.nuget\\packages\\",
+      "outputPath": "C:\\DOTNETPROJECTS\\pdf-processor\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Tariq\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Users\\tkhan\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -563,7 +558,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Users\\Tariq\\.dotnet\\sdk\\8.0.404/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.405/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

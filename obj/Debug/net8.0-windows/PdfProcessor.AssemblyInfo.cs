@@ -10,12 +10,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("PdfTextExtractor")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("PdfProcessor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4870fd69accfb428595affb1af3ccb59362f95cb")]
-[assembly: System.Reflection.AssemblyProductAttribute("PdfTextExtractor")]
-[assembly: System.Reflection.AssemblyTitleAttribute("PdfTextExtractor")]
+[assembly: System.Reflection.AssemblyProductAttribute("PdfProcessor")]
+[assembly: System.Reflection.AssemblyTitleAttribute("PdfProcessor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]

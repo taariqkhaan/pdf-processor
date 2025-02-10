@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\DOTNETPROJECTS\\pdf-to-csv\\PdfTextExtractor.csproj": {}
+    "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj": {}
   },
   "projects": {
-    "C:\\DOTNETPROJECTS\\pdf-to-csv\\PdfTextExtractor.csproj": {
+    "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\DOTNETPROJECTS\\pdf-to-csv\\PdfTextExtractor.csproj",
-        "projectName": "PdfTextExtractor",
-        "projectPath": "C:\\DOTNETPROJECTS\\pdf-to-csv\\PdfTextExtractor.csproj",
+        "projectUniqueName": "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj",
+        "projectName": "PdfProcessor",
+        "projectPath": "C:\\DOTNETPROJECTS\\pdf-processor\\PdfProcessor.csproj",
         "packagesPath": "C:\\Users\\tkhan\\.nuget\\packages\\",
-        "outputPath": "C:\\DOTNETPROJECTS\\pdf-to-csv\\obj\\",
+        "outputPath": "C:\\DOTNETPROJECTS\\pdf-processor\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\tkhan\\AppData\\Roaming\\NuGet\\NuGet.Config",

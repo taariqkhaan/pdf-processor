@@ -2,12 +2,13 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Input;
-using PdfTextExtractor.Models;
-using PdfTextExtractor.Services;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using PdfProcessor.Helpers;
+using PdfProcessor.Models;
+using PdfProcessor.Services;
 
 
-namespace PdfTextExtractor.ViewModels
+namespace PdfProcessor.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
@@ -35,7 +36,8 @@ namespace PdfTextExtractor.ViewModels
 
         public MainWindowViewModel()
         {
-            _pdfTextService = new PdfTextService();
+            var pdfRegionService = new PdfRegionService();
+            _pdfTextService = new PdfTextService(pdfRegionService);
             BrowsePdfCommand = new RelayCommand(BrowsePdf);
             BrowseOutputFolderCommand = new RelayCommand(BrowseOutputFolder);
             ExtractAndSaveCommand = new RelayCommand(ExtractAndSave);
@@ -69,20 +71,19 @@ namespace PdfTextExtractor.ViewModels
                 return;
             }
             
-            var pdfHighlightService = new PdfHighlightService();
+            // Highlight a section 
+            // var pdfHighlightService = new PdfHighlightService();
+            // pdfHighlightService.HighlightPdfRegions(PdfFilePath, OutputFolderPath);
 
-            // Example: Highlight a section (x: 100, y: 150, width: 200, height: 50)
-            pdfHighlightService.HighlightPdf(PdfFilePath, OutputFolderPath, 25, 75, 745, 425);
+            string outputFile = Path.Combine(OutputFolderPath, "ExtractedText.csv");
+            
+            // Step 1: Extract structured text data
+            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(PdfFilePath);
+            
+            // Step 2: Save extracted data to CSV
+            _pdfTextService.SaveToCsv(extractedData, outputFile);
 
-            // string outputFile = Path.Combine(OutputFolderPath, "ExtractedText.csv");
-            //
-            // // Step 1: Extract structured text data
-            // List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(PdfFilePath);
-            //
-            // // Step 2: Save extracted data to CSV
-            // _pdfTextService.SaveToCsv(extractedData, outputFile);
-
-            // System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {outputFile}");
+            System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {outputFile}");
         }
 
 

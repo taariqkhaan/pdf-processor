@@ -1,15 +1,13 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using PdfSharpCore.Drawing;
-using PdfSharpCore.Pdf;
-using UglyToad.PdfPig;
-using UglyToad.PdfPig.Content;
 
-namespace PdfTextExtractor.Services
+
+namespace PdfProcessor.Services
 {
     public class PdfHighlightService
     {
-        public void HighlightPdf(string inputPdfPath, string outputFolder, double highlightX, double highlightY, double width, double height)
+        private readonly PdfRegionService _regionService = new PdfRegionService();
+        public void HighlightPdfRegions(string inputPdfPath, string outputFolder)
         {
             string outputPdfPath = Path.Combine(outputFolder, "HighlightedPDF.pdf");
 
@@ -19,10 +17,23 @@ namespace PdfTextExtractor.Services
                 foreach (PdfSharpCore.Pdf.PdfPage page in document.Pages)
                 {
                     XGraphics gfx = XGraphics.FromPdfPage(page);
+                    
+                    double pageWidth = page.Width;
+                    double pageHeight = page.Height;
+                    int pageRotation = (int)page.Rotate;
+                    
+                    // Define different regions
+                    XRect headerRegion = _regionService.GetHeaderRegion(pageWidth, pageHeight);
+                    XRect footerRegion = _regionService.GetFooterRegion(pageWidth, pageHeight);
+                    XRect contentRegion = _regionService.GetContentRegion(pageWidth, pageHeight);
+                    XRect fullPageRegion = _regionService.GetFullPageRegion(pageWidth, pageHeight);
+                    XRect bowRegion = _regionService.GetBowRegion(pageWidth, pageHeight, pageRotation);
+                    
+                    
 
                     // Draw the yellow highlight
                     XSolidBrush highlightBrush = new XSolidBrush(XColor.FromArgb(150, 255, 255, 0));
-                    gfx.DrawRectangle(highlightBrush, highlightX, page.Height - highlightY - height, width, height);
+                    gfx.DrawRectangle(highlightBrush, bowRegion);
                 }
 
                 document.Save(outputPdfPath);

@@ -1,4 +1,4 @@
-﻿namespace PdfTextExtractor.Models;
+﻿namespace PdfProcessor.Models;
 
 public class PdfTextModel
 {
