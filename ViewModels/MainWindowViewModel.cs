@@ -12,14 +12,14 @@ namespace PdfProcessor.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        private string _pdfFilePath;
+        private string _allFilePath;
         private string _outputFolderPath;
         private readonly PdfTextService _pdfTextService;
 
-        public string PdfFilePath
+        public string AllFilePath
         {
-            get => _pdfFilePath;
-            set { _pdfFilePath = value; OnPropertyChanged(nameof(PdfFilePath)); }
+            get => _allFilePath;
+            set { _allFilePath = value; OnPropertyChanged(nameof(AllFilePath)); }
         }
 
         public string OutputFolderPath
@@ -28,7 +28,7 @@ namespace PdfProcessor.ViewModels
             set { _outputFolderPath = value; OnPropertyChanged(nameof(OutputFolderPath)); }
         }
 
-        public ICommand BrowsePdfCommand { get; }
+        public ICommand BrowseFileCommand { get; }
         public ICommand BrowseOutputFolderCommand { get; }
         public ICommand ExtractAndSaveCommand { get; }
 
@@ -38,16 +38,17 @@ namespace PdfProcessor.ViewModels
         {
             var pdfRegionService = new PdfRegionService();
             _pdfTextService = new PdfTextService(pdfRegionService);
-            BrowsePdfCommand = new RelayCommand(BrowsePdf);
+            
+            BrowseFileCommand = new RelayCommand(BrowseFile);
             BrowseOutputFolderCommand = new RelayCommand(BrowseOutputFolder);
-            ExtractAndSaveCommand = new RelayCommand(ExtractAndSave);
+            ExtractAndSaveCommand = new RelayCommand(Process);
         }
 
-        private void BrowsePdf()
+        private void BrowseFile()
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "PDF Files|*.pdf" };
+            OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "All Files (*.*)|*.*" };
             if (openFileDialog.ShowDialog() == true)
-                PdfFilePath = openFileDialog.FileName;
+                AllFilePath = openFileDialog.FileName;
         }
 
         private void BrowseOutputFolder()
@@ -63,30 +64,28 @@ namespace PdfProcessor.ViewModels
             }
         }
 
-        private void ExtractAndSave()
+        private void Process()
         {
-            if (string.IsNullOrEmpty(PdfFilePath) || string.IsNullOrEmpty(OutputFolderPath))
+            if (string.IsNullOrEmpty(AllFilePath) || string.IsNullOrEmpty(OutputFolderPath))
             {
-                System.Windows.MessageBox.Show("Please select a PDF file and an output folder.");
+                System.Windows.MessageBox.Show("Please select a file and an output folder.");
                 return;
             }
             
             // Highlight a section 
             // var pdfHighlightService = new PdfHighlightService();
             // pdfHighlightService.HighlightPdfRegions(PdfFilePath, OutputFolderPath);
-
-            string outputFile = Path.Combine(OutputFolderPath, "ExtractedText.csv");
             
-            // Step 1: Extract structured text data
-            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(PdfFilePath);
+            // Save text as .csv and.db
+            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
             
-            // Step 2: Save extracted data to CSV
-            _pdfTextService.SaveToCsv(extractedData, outputFile);
-
-            System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {outputFile}");
+            ExportService exportService = new ExportService();
+            exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+            exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+            
+            System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {OutputFolderPath}");
         }
-
-
+        
         protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-C:\DOTNETPROJECTS\pdf-processor\obj\Debug\net8.0-windows\
+E:\GitHub\pdf-processor\obj\Debug\net8.0-windows\
 PdfProcessor
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
-C:\DOTNETPROJECTS\pdf-processor\App.xaml
+E:\GitHub\pdf-processor\App.xaml
 1-1644662438
 
-10200893365
-2181374784090
+11762436476
+223901284466
 Views\MainWindow.xaml;
 
 False

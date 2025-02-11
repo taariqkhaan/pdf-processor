@@ -6,7 +6,8 @@
         mc:Ignorable="d"
         Title="PDF Text Extractor" Height="Auto" Width="600"
         SizeToContent="Height"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
@@ -24,15 +25,15 @@
                  Margin="5"
                  Padding="5" 
                  FontSize="14"
-                 Text="{Binding PdfFilePath, Mode=TwoWay}"/>
+                 Text="{Binding AllFilePath, Mode=TwoWay}"/>
         <Button Grid.Row="0" 
                 Grid.Column="1" 
                 Width="110"
                 Margin="5"
                 Padding="5"
                 FontSize="14"
-                Content="Browse PDF" 
-                Command="{Binding BrowsePdfCommand}"/>
+                Content="Browse File" 
+                Command="{Binding BrowseFileCommand}"/>
         <TextBox Grid.Row="1" 
                  Grid.Column="0" 
                  Margin="5"
@@ -57,7 +58,7 @@
                 Padding="5"
                 FontSize="14"
                 HorizontalAlignment="Center"
-                Content="Extract &amp; Save CSV" 
+                Content="Process" 
                 Command="{Binding ExtractAndSaveCommand}"/>
     </Grid>
 </Window>

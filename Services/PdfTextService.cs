@@ -4,6 +4,7 @@ using System.Text;
 using PdfProcessor.Models;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Core;
 
 namespace PdfProcessor.Services
 {
@@ -23,18 +24,14 @@ namespace PdfProcessor.Services
             {
                 foreach (Page page in document.GetPages())
                 {
-                    
-                    var regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
-                    var region = (regionRect.X, regionRect.Y, regionRect.Width, regionRect.Height);
-                    Console.WriteLine($"{region}");
-                    extractedText.AddRange(ExtractTextFromPage(page, region, page.Rotation.Value));
+                    PdfRectangle regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
+                    extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value));
                 }
             }
-
             return extractedText;
         }
 
-        private List<PdfTextModel> ExtractTextFromPage(Page page, (double x, double y, double width, double height) region, int rotation)
+        private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
             List<Word> words = page.GetWords().ToList();
@@ -46,17 +43,19 @@ namespace PdfProcessor.Services
             
             if (rotation == 0)
             {
-                regionX1 = region.x;//same
-                regionY1 = page.Height - (region.y + region.height);
-                regionX2 = region.x + region.width;//same
-                regionY2 = page.Height - region.y;
-            }
+                regionX1 = region.BottomLeft.X;
+                regionY1 = region.BottomLeft.Y;
+                regionX2 = region.TopRight.X;
+                regionY2 = region.TopRight.Y;
+                
+            }   
             else
             {
-                regionX1 = region.width + region.y; //done
-                regionY1 = region.height + region.x;
-                regionX2 = region.y; //done
-                regionY2 = region.x; //done
+                regionX1 = region.TopRight.X;
+                regionY1 = region.TopRight.Y;
+                regionX2 = region.BottomLeft.X;
+                regionY2 = region.BottomLeft.Y;
+                Console.WriteLine($"{regionX1}, {regionY1}, {regionX2}, {regionY2}");
             }
             
             foreach (Word word in words)
@@ -86,18 +85,8 @@ namespace PdfProcessor.Services
             
             return textModels;
         }
-
-        public void SaveToCsv(List<PdfTextModel> extractedText, string outputCsvPath)
-        {
-            StringBuilder csvContent = new StringBuilder();
-            csvContent.AppendLine("Text,BottomLeftX,BottomLeftY,TopRightX,TopRightY");
-
-            foreach (var item in extractedText)
-            {
-                csvContent.AppendLine($"\"{item.Text}\",{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)},{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)},{item.TopRightX.ToString(CultureInfo.InvariantCulture)},{item.TopRightY.ToString(CultureInfo.InvariantCulture)}");
-            }
-
-            File.WriteAllText(outputCsvPath, csvContent.ToString());
-        }
+        
+        
+        
     }
 }
