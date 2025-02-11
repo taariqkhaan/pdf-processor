@@ -12,13 +12,18 @@ namespace PdfProcessor.Services
         public void SaveToCsv(List<PdfTextModel> extractedText, string outputCsvPath)
         {
             StringBuilder csvContent = new StringBuilder();
-            csvContent.AppendLine("Text,BottomLeftX,BottomLeftY,TopRightX,TopRightY");
+            csvContent.AppendLine("Text,BottomLeftX,BottomLeftY,TopRightX,TopRightY,TextRotation,SheetNumber");
 
             foreach (var item in extractedText)
             {
-                csvContent.AppendLine($"\"{item.Text}\",{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)},{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)},{item.TopRightX.ToString(CultureInfo.InvariantCulture)},{item.TopRightY.ToString(CultureInfo.InvariantCulture)}");
+                csvContent.AppendLine($"\"{item.Text}\"," +
+                                      $"{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)}," +
+                                      $"{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)}," +
+                                      $"{item.TopRightX.ToString(CultureInfo.InvariantCulture)}," +
+                                      $"{item.TopRightY.ToString(CultureInfo.InvariantCulture)}," +
+                                      $"{item.Rotation.ToString(CultureInfo.InvariantCulture)}," +
+                                      $"{item.PageNumber.ToString(CultureInfo.InvariantCulture)}");
             }
-
             File.WriteAllText(outputCsvPath, csvContent.ToString());
         }
         
@@ -38,7 +43,9 @@ namespace PdfProcessor.Services
                     X1 REAL NOT NULL,
                     Y1 REAL NOT NULL,
                     X2 REAL NOT NULL,
-                    Y2 REAL NOT NULL
+                    Y2 REAL NOT NULL,
+                    TextRotation INTEGER NOT NULL,
+                    SheetNumber INTEGER NOT NULL
                 );";
 
                 using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))
@@ -47,7 +54,7 @@ namespace PdfProcessor.Services
                 }
 
                 // Insert extracted text and coordinates into the database
-                string insertQuery = "INSERT INTO pdf_table (Text, X1, Y1, X2, Y2) VALUES (@Text, @BottomLeftX, @BottomLeftY, @TopRightX, @TopRightY);";
+                string insertQuery = "INSERT INTO pdf_table (Text, X1, Y1, X2, Y2, TextRotation, SheetNumber) VALUES (@Text, @BottomLeftX, @BottomLeftY, @TopRightX, @TopRightY, @Rotation, @PageNumber);";
 
                 using (SQLiteTransaction transaction = connection.BeginTransaction())
                 using (SQLiteCommand command = new SQLiteCommand(insertQuery, connection))
@@ -57,6 +64,8 @@ namespace PdfProcessor.Services
                     command.Parameters.Add(new SQLiteParameter("@BottomLeftY"));
                     command.Parameters.Add(new SQLiteParameter("@TopRightX"));
                     command.Parameters.Add(new SQLiteParameter("@TopRightY"));
+                    command.Parameters.Add(new SQLiteParameter("@Rotation"));
+                    command.Parameters.Add(new SQLiteParameter("@PageNumber"));
 
                     foreach (var data in extractedData)
                     {
@@ -65,6 +74,8 @@ namespace PdfProcessor.Services
                         command.Parameters["@BottomLeftY"].Value = data.BottomLeftY;
                         command.Parameters["@TopRightX"].Value = data.TopRightX;
                         command.Parameters["@TopRightY"].Value = data.TopRightY;
+                        command.Parameters["@Rotation"].Value = data.Rotation;
+                        command.Parameters["@PageNumber"].Value = data.PageNumber;
                         command.ExecuteNonQuery();
                     }
 

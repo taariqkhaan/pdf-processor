@@ -1,0 +1,14 @@
+write a program using C#, .NET 8.0.
+accepts .db file as parameter and overwrites the original after processing.
+looks for table called "pdf_table" inside the database.
+create a column called "Type" of type STRING
+go row-by-row
+if X1 column = 28 +/-3%  & Y2 column = 492+/-0.2%, set Type  = "cable_tag"
+
+namespace PdfProcessor.Services
+{
+    public class CableScheduleService
+    {
+        //put logic in a method here
+    }
+}

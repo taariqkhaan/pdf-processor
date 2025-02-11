@@ -77,11 +77,18 @@ namespace PdfProcessor.ViewModels
             // pdfHighlightService.HighlightPdfRegions(PdfFilePath, OutputFolderPath);
             
             // Save text as .csv and.db
-            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
+            // List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
+            //
+            // ExportService exportService = new ExportService();
+            //
+            // exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+            // exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
             
-            ExportService exportService = new ExportService();
-            exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-            exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+            // Analyze the database for cable schedule 
+            CableScheduleService cableScheduleService = new CableScheduleService();
+            cableScheduleService.ProcessDatabase(AllFilePath);
+            
+            
             
             System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {OutputFolderPath}");
         }

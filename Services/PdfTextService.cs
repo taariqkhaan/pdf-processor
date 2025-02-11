@@ -1,7 +1,4 @@
-﻿using System.Globalization;
-using System.IO;
-using System.Text;
-using PdfProcessor.Models;
+﻿using PdfProcessor.Models;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
@@ -22,42 +19,38 @@ namespace PdfProcessor.Services
 
             using (PdfDocument document = PdfDocument.Open(pdfPath))
             {
+                int pageNumber = 1; // Page numbers start from 1
+                
                 foreach (Page page in document.GetPages())
                 {
                     PdfRectangle regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
-                    extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value));
+                    extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value, pageNumber));
+                    //Console.WriteLine($"{extractedText[150].PageNumber}");
+                    
+                    pageNumber++; // Increment page number for next iteration
                 }
             }
             return extractedText;
         }
 
-        private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation)
+        private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation, int pageNumber)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
             List<Word> words = page.GetWords().ToList();
             
-            double regionX1;
-            double regionY1;
-            double regionX2;
-            double regionY2;
+            double regionX1 = region.BottomLeft.X;
+            double regionY1 = region.BottomLeft.Y;
+            double regionX2 = region.TopRight.X;
+            double regionY2 = region.TopRight.Y;
             
-            if (rotation == 0)
-            {
-                regionX1 = region.BottomLeft.X;
-                regionY1 = region.BottomLeft.Y;
-                regionX2 = region.TopRight.X;
-                regionY2 = region.TopRight.Y;
-                
-            }   
-            else
+            if (rotation != 0)
             {
                 regionX1 = region.TopRight.X;
                 regionY1 = region.TopRight.Y;
                 regionX2 = region.BottomLeft.X;
                 regionY2 = region.BottomLeft.Y;
-                Console.WriteLine($"{regionX1}, {regionY1}, {regionX2}, {regionY2}");
-            }
-            
+            }   
+
             foreach (Word word in words)
             {
                 if (!string.IsNullOrWhiteSpace(word.Text))
@@ -70,6 +63,8 @@ namespace PdfProcessor.Services
                     double wordX2 = lastChar.GlyphRectangle.TopRight.X;
                     double wordY2 = lastChar.GlyphRectangle.TopRight.Y;
                     
+                    int textRotation = GetTextRotation(firstChar, lastChar); // Detect text rotation
+                    
                     if (wordX1 >= regionX1 && wordY1 >= regionY1 && wordX2 <= regionX2 && wordY2 <= regionY2)
                     {
                         textModels.Add(new PdfTextModel(
@@ -77,16 +72,31 @@ namespace PdfProcessor.Services
                             wordX1,
                             wordY1,
                             wordX2,
-                            wordY2
+                            wordY2,
+                            textRotation,
+                            pageNumber
                         ));
                     }
                 }
             }
-            
             return textModels;
         }
-        
-        
-        
+        private int GetTextRotation(Letter firstChar, Letter lastChar)
+        {
+            // Calculate angle of text based on first and last character positions
+            double deltaX = lastChar.GlyphRectangle.BottomLeft.X - firstChar.GlyphRectangle.BottomLeft.X;
+            double deltaY = lastChar.GlyphRectangle.BottomLeft.Y - firstChar.GlyphRectangle.BottomLeft.Y;
+            
+            double angle = Math.Atan2(deltaY, deltaX) * (180 / Math.PI);
+
+            if (angle >= -10 && angle <= 10)
+                return 0; // Horizontal text
+            if (angle >= 80 && angle <= 100)
+                return 90; // Vertical text (clockwise)
+            if (angle >= 260 && angle <= 280)
+                return 270; // Vertical text (counterclockwise)
+
+            return 0; // Default to horizontal
+        }
     }
 }
