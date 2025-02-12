@@ -74,7 +74,7 @@ namespace PdfProcessor.ViewModels
             
             // Highlight a section 
             // var pdfHighlightService = new PdfHighlightService();
-            // pdfHighlightService.HighlightPdfRegions(PdfFilePath, OutputFolderPath);
+            // pdfHighlightService.HighlightPdfRegions(AllFilePath, OutputFolderPath);
             
             // Save text as .csv and.db
             // List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
@@ -85,8 +85,12 @@ namespace PdfProcessor.ViewModels
             // exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
             
             // Analyze the database for cable schedule 
-            CableScheduleService cableScheduleService = new CableScheduleService();
-            cableScheduleService.ProcessDatabase(AllFilePath);
+            // CableScheduleService cableScheduleService = new CableScheduleService();
+            // cableScheduleService.ProcessDatabase(AllFilePath);
+            
+            // Analyze the database for cable schedule 
+            CoordinateDotService coordinateDotService = new CoordinateDotService();
+            coordinateDotService.AnnotatePdfWithDots(AllFilePath, OutputFolderPath);
             
             
             

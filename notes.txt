@@ -1,14 +1,39 @@
 write a program using C#, .NET 8.0.
-accepts .db file as parameter and overwrites the original after processing.
+accepts a pdf file and output folder path as parameter
+look for a data.db in the same folder as the pdf file.
 looks for table called "pdf_table" inside the database.
-create a column called "Type" of type STRING
-go row-by-row
-if X1 column = 28 +/-3%  & Y2 column = 492+/-0.2%, set Type  = "cable_tag"
+contains bottom-left coordinate in X1, Y1 columns.
+contains top-right coordinate in X2, Y2 columns.
+above coordinates were extracted using PDFpig.
+SheetNumber column contains the pdf page number.
+sort the table by SheetNumber ascending, ItemNumber ascending, Type alphabetical.
+
+go row-by-row in Type Column
+if value is "from_desc" then place a red dot at the corresponding bottom-left and top-right coordinates.
+if null, continue.
+save the highlighted pdf in the output folder as highlighted_pdf.pdf
+use PdfSharp + MigraDoc for annotation. 
+Take into account any difference in coordinate systems.
+
 
 namespace PdfProcessor.Services
 {
-    public class CableScheduleService
+    public class CoordinateDotService
     {
         //put logic in a method here
     }
 }
+
+Console.WriteLine($"Page {pageIndex} rotation: {page.Rotation}");
+
+'cable_tag'
+'from_desc'
+'to_desc'
+'function'
+'size'
+'insulation'
+'from_ref'
+'to_ref'
+'voltage'
+'conductors'
+'length'

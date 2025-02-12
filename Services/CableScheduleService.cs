@@ -65,37 +65,37 @@ namespace PdfProcessor.Services
 
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
-            string selectQuery = "SELECT rowid, X1, Y2, SheetNumber FROM pdf_table ORDER BY SheetNumber, Y2 DESC;";
+            string selectQuery = "SELECT rowid, X1, Y1, SheetNumber FROM pdf_table ORDER BY SheetNumber, Y1 DESC;";
     
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
             {
                 int lastSheetNumber = -1;
                 int itemNumber = 1;
-                double y2_current = 0;
+                double y1_current = 0;
 
                 while (reader.Read())
                 {
                     int rowId = reader.GetInt32(0);
                     double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
-                    double y2 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
+                    double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
                     int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
 
-                    // Reset y2_step if the sheet number changes
+                    // Reset y1_step if the sheet number changes
                     if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
                     {
-                        y2_current = y2;
+                        y1_current = y1;
                         itemNumber = 1;
                         lastSheetNumber = sheetNumber;
                     }
                     
-                    if (Math.Abs(y2 - y2_current) > 17)
+                    if (Math.Abs(y1 - y1_current) > 17)
                     {
-                        y2_current = y2;
+                        y1_current = y1;
                         itemNumber += 1;
                     }
 
-                    string tag = IsValidTag(x1, y2, ref y2_current);
+                    string tag = IsValidTag(x1, y1, ref y1_current);
                     if (!string.IsNullOrEmpty(tag))
                     {
                         UpdateDatabase(connection, rowId, tag, itemNumber);
@@ -106,9 +106,9 @@ namespace PdfProcessor.Services
             }
         }
         
-        private string IsValidTag(double x1, double y2, ref double y2_current)
+        private string IsValidTag(double x1, double y1, ref double y1_current)
         {
-            if (Math.Abs(y2 - y2_current) < 2)
+            if (Math.Abs(y1 - y1_current) < 2)
             {
                 return x1 switch
                 {
@@ -121,7 +121,7 @@ namespace PdfProcessor.Services
                     _ => string.Empty // Default case if no condition is met
                 };
             }
-            if (Math.Abs(y2 - y2_current) > 2)
+            if (Math.Abs(y1 - y1_current) > 2)
             {
                 return x1 switch
                 {

@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using PdfSharpCore.Drawing;
+using PdfSharp.Drawing;
 using UglyToad.PdfPig.Core;
 
 
@@ -14,9 +14,9 @@ namespace PdfProcessor.Services
             string outputPdfPath = Path.Combine(outputFolder, "HighlightedPDF.pdf");
 
             // Open the existing PDF document for editing
-            using (PdfSharpCore.Pdf.PdfDocument document = PdfSharpCore.Pdf.IO.PdfReader.Open(inputPdfPath, PdfSharpCore.Pdf.IO.PdfDocumentOpenMode.Modify))
+            using (PdfSharp.Pdf.PdfDocument document = PdfSharp.Pdf.IO.PdfReader.Open(inputPdfPath, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Modify))
             {
-                foreach (PdfSharpCore.Pdf.PdfPage page in document.Pages)
+                foreach (PdfSharp.Pdf.PdfPage page in document.Pages)
                 {
                     XGraphics gfx = XGraphics.FromPdfPage(page);
                     

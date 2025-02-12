@@ -19,15 +19,14 @@ namespace PdfProcessor.Services
 
             using (PdfDocument document = PdfDocument.Open(pdfPath))
             {
-                int pageNumber = 1; // Page numbers start from 1
+                int pageNumber = 1;
                 
                 foreach (Page page in document.GetPages())
                 {
                     PdfRectangle regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
                     extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value, pageNumber));
-                    //Console.WriteLine($"{extractedText[150].PageNumber}");
                     
-                    pageNumber++; // Increment page number for next iteration
+                    pageNumber++;
                 }
             }
             return extractedText;
@@ -43,14 +42,6 @@ namespace PdfProcessor.Services
             double regionX2 = region.TopRight.X;
             double regionY2 = region.TopRight.Y;
             
-            if (rotation != 0)
-            {
-                regionX1 = region.TopRight.X;
-                regionY1 = region.TopRight.Y;
-                regionX2 = region.BottomLeft.X;
-                regionY2 = region.BottomLeft.Y;
-            }   
-
             foreach (Word word in words)
             {
                 if (!string.IsNullOrWhiteSpace(word.Text))
@@ -62,6 +53,12 @@ namespace PdfProcessor.Services
                     double wordY1 = firstChar.GlyphRectangle.BottomLeft.Y;
                     double wordX2 = lastChar.GlyphRectangle.TopRight.X;
                     double wordY2 = lastChar.GlyphRectangle.TopRight.Y;
+                    
+                    // Smaller characters like . or * can have smaller Y2 value
+                    if (Math.Abs(wordY1 - wordY2) < 5)
+                    {
+                        wordY2 = wordY1 + 5.77;
+                    }
                     
                     int textRotation = GetTextRotation(firstChar, lastChar); // Detect text rotation
                     

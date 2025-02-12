@@ -31,21 +31,8 @@ namespace PdfProcessor.Services
         /// Gets search region for Southern Company Bill of Wire
         public PdfRectangle GetBowRegion(double pageWidth, double pageHeight, int pageRotation)
         {
-            if (pageRotation == 0)
-            {
                 return new PdfRectangle(25, 75, 760, 500);
-            }
-            else if (pageRotation == 90)
-            {
-                //Console.WriteLine($"{pageHeight}, {pageWidth}, {pageRotation}");
-                return new PdfRectangle(pageHeight - 500,25,pageHeight - 75,760);
-            }
-            else
-            {
-                //Console.WriteLine($"{pageHeight}, {pageWidth}, {pageRotation}");
-                return new PdfRectangle(0, 0, pageWidth, pageHeight);
-            }
-            
+ 
         }
         
     }
