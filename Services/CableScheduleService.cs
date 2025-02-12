@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.IO;
+using System.Diagnostics;
 
 namespace PdfProcessor.Services
 {
@@ -12,6 +13,8 @@ namespace PdfProcessor.Services
                 Console.WriteLine("Database file not found.");
                 return;
             }
+            
+            Stopwatch stopwatch = Stopwatch.StartNew(); // Start measuring time
 
             try
             {
@@ -26,6 +29,9 @@ namespace PdfProcessor.Services
             {
                 Console.WriteLine($"Error processing database: {ex.Message}");
             }
+            
+            stopwatch.Stop(); // Stop measuring time
+            Console.WriteLine($"Total Execution CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
         }
 
         private void EnsureColumnsExist(SQLiteConnection connection)
@@ -66,45 +72,59 @@ namespace PdfProcessor.Services
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
             string selectQuery = "SELECT rowid, X1, Y1, SheetNumber FROM pdf_table ORDER BY SheetNumber, Y1 DESC;";
-    
+            
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
             {
                 int lastSheetNumber = -1;
                 int itemNumber = 1;
                 double y1_current = 0;
-
-                while (reader.Read())
+                
+                // Start Transaction
+                using (var transaction = connection.BeginTransaction())
+                using (var updateCmd = new SQLiteCommand("UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;", connection, transaction))
                 {
-                    int rowId = reader.GetInt32(0);
-                    double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
-                    double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
-                    int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                    updateCmd.Parameters.Add(new SQLiteParameter("@Type"));
+                    updateCmd.Parameters.Add(new SQLiteParameter("@ItemNumber"));
+                    updateCmd.Parameters.Add(new SQLiteParameter("@RowId"));
 
-                    // Reset y1_step if the sheet number changes
-                    if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
+                    while (reader.Read())
                     {
-                        y1_current = y1;
-                        itemNumber = 1;
-                        lastSheetNumber = sheetNumber;
+                        int rowId = reader.GetInt32(0);
+                        double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
+                        double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
+                        int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+
+                        if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
+                        {
+                            y1_current = y1;
+                            itemNumber = 1;
+                            lastSheetNumber = sheetNumber;
+                        }
+
+                        if (Math.Abs(y1 - y1_current) > 17)
+                        {
+                            y1_current = y1;
+                            itemNumber += 1;
+                        }
+
+                        string tag = IsValidTag(x1, y1, ref y1_current);
+                        if (!string.IsNullOrEmpty(tag))
+                        {
+                            // Use parameterized query to avoid overhead
+                            updateCmd.Parameters["@Type"].Value = tag;
+                            updateCmd.Parameters["@ItemNumber"].Value = itemNumber;
+                            updateCmd.Parameters["@RowId"].Value = rowId;
+                            updateCmd.ExecuteNonQuery();
+                        }
                     }
                     
-                    if (Math.Abs(y1 - y1_current) > 17)
-                    {
-                        y1_current = y1;
-                        itemNumber += 1;
-                    }
-
-                    string tag = IsValidTag(x1, y1, ref y1_current);
-                    if (!string.IsNullOrEmpty(tag))
-                    {
-                        UpdateDatabase(connection, rowId, tag, itemNumber);
-                        
-                    }
-                    
+                    // Commit Transaction
+                    transaction.Commit();
                 }
             }
         }
+
         
         private string IsValidTag(double x1, double y1, ref double y1_current)
         {
@@ -112,12 +132,12 @@ namespace PdfProcessor.Services
             {
                 return x1 switch
                 {
-                    _ when x1 > 28 * 0.97 && x1 <= 136 => "cable_tag",
-                    _ when x1 > 137 * 0.97 && x1 <= 274 => "from_desc",
-                    _ when x1 > 275 * 0.97 && x1 <= 415 => "to_desc",
+                    _ when x1 > 23 * 0.97 && x1 <= 133 => "cable_tag",
+                    _ when x1 > 137 * 0.97 && x1 <= 270 => "from_desc",
+                    _ when x1 > 275 * 0.97 && x1 <= 410 => "to_desc",
                     _ when x1 > 416 * 0.97 && x1 <= 467 => "function",
-                    _ when x1 > 543 * 0.97 && x1 <= 596 => "size",
-                    _ when x1 > 597 * 0.97 && x1 <= 650 => "insulation",
+                    _ when x1 > 539 * 0.97 && x1 <= 594 => "size",
+                    _ when x1 > 593 * 0.97 && x1 <= 650 => "insulation",
                     _ => string.Empty // Default case if no condition is met
                 };
             }
@@ -125,10 +145,10 @@ namespace PdfProcessor.Services
             {
                 return x1 switch
                 {
-                    _ when x1 > 137 * 0.97 && x1 <= 274 => "from_ref",
-                    _ when x1 > 275 * 0.97 && x1 <= 415 => "to_ref",
-                    _ when x1 > 452 * 0.97 && x1 <= 529 => "voltage",
-                    _ when x1 > 530 * 0.97 && x1 <= 582 => "conductors",
+                    _ when x1 > 137 * 0.97 && x1 <= 270 => "from_ref",
+                    _ when x1 > 275 * 0.97 && x1 <= 410 => "to_ref",
+                    _ when x1 > 452 * 0.97 && x1 <= 500 => "voltage",
+                    _ when x1 > 525 * 0.97 && x1 <= 560 => "conductors",
                     _ when x1 > 583 * 0.97 && x1 <= 597 => "length",
                     _ => string.Empty // Default case if no condition is met
                 };

@@ -38,17 +38,7 @@ namespace PdfProcessor.Services
             string query = @"
                 SELECT SheetNumber, X1, Y1, X2, Y2, Type
                 FROM pdf_table
-                WHERE Type IN ('cable_tag',
-                                'from_desc',
-                                'to_desc',
-                                'function',
-                                'size',
-                                'insulation',
-                                'from_ref',
-                                'to_ref',
-                                'voltage',
-                                'conductors',
-                                'length')
+                WHERE Type IN ('cable_tag','from_desc','to_desc','function','size','insulation','from_ref','to_ref','voltage','conductors','length')
                 ORDER BY SheetNumber ASC, ItemNumber ASC, Type ASC";
 
             using SQLiteCommand command = new(query, connection);
@@ -89,12 +79,10 @@ namespace PdfProcessor.Services
 
                         if (page.Rotation != 0)
                         {
-                            gfx.DrawRectangle(redBrush, page.Height - y1, x1,  rectWidth, rectHeight);
+                            gfx.TranslateTransform( page.Width - page.Height,page.Height);
+                            gfx.RotateTransform(270);
                         }
-                        else
-                        {
-                            gfx.DrawRectangle(redBrush, x1, adjustedY2, rectWidth, rectHeight);
-                        }
+                        gfx.DrawRectangle(redBrush, x1, adjustedY2, rectWidth, rectHeight);
                     } 
                 }
             }

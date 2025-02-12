@@ -18,13 +18,15 @@ Take into account any difference in coordinate systems.
 
 namespace PdfProcessor.Services
 {
-    public class CoordinateDotService
+    public class MissingInfoService
     {
         //put logic in a method here
     }
 }
 
 Console.WriteLine($"Page {pageIndex} rotation: {page.Rotation}");
+Console.WriteLine($"{wordY1}, {word.Text}, {pageNumber}");
+Console.WriteLine($"{}");
 
 'cable_tag'
 'from_desc'
@@ -37,3 +39,74 @@ Console.WriteLine($"Page {pageIndex} rotation: {page.Rotation}");
 'voltage'
 'conductors'
 'length'
+
+
+write a program using C#, .NET 8.0.
+accepts a pdf file and output folder path as parameter.
+using PDFpig, detect is pdf pages are rotated in metadata, but not visually.
+if yes, fix the rotation to match the visual rotation.
+
+namespace PdfProcessor.Services
+{
+    public class FixRotationService
+    {
+        //put logic in a method here
+    }
+}
+
+
+Y1_start_line1 = 492
+Y1_start_line2 = 480
+
+
+Y1=Y1_start_line1-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77
+{
+'cable_tag' is missing --> X1 = 25, X2 = X1+40
+'from_desc' --> X1 = 137, X2 = X1+40,
+'to_desc' --> X1 = 275, X2 = X1+40,
+'function'--> X1 = 416, X2 = X1+40,
+'size'--> X1 = 543, X2 = X1+20,
+'insulation'--> X1 = 597, X2 = X1+40,
+}
+
+Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77
+{
+'from_ref'--> X1 = 137, X2 = X1+40,
+'to_ref'--> X1 = 275, X2 = X1+40,
+'voltage'--> X1 = 452, X2 = X1+40,
+'conductors'--> X1 = 530, X2 = X1+20,
+'length'--> X1 = 583, X2 = X1+20,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

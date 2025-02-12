@@ -2,6 +2,7 @@
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
+using System.Diagnostics;
 
 namespace PdfProcessor.Services
 {
@@ -15,6 +16,7 @@ namespace PdfProcessor.Services
         }
         public List<PdfTextModel> ExtractTextAndCoordinates(string pdfPath)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew(); // Start measuring time
             List<PdfTextModel> extractedText = new List<PdfTextModel>();
 
             using (PdfDocument document = PdfDocument.Open(pdfPath))
@@ -29,9 +31,10 @@ namespace PdfProcessor.Services
                     pageNumber++;
                 }
             }
+            stopwatch.Stop(); // Stop measuring time
+            Console.WriteLine($"Total Execution PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
             return extractedText;
         }
-
         private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation, int pageNumber)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
@@ -41,6 +44,7 @@ namespace PdfProcessor.Services
             double regionY1 = region.BottomLeft.Y;
             double regionX2 = region.TopRight.X;
             double regionY2 = region.TopRight.Y;
+            double? dateY1 = null;
             
             foreach (Word word in words)
             {
@@ -60,10 +64,25 @@ namespace PdfProcessor.Services
                         wordY2 = wordY1 + 5.77;
                     }
                     
-                    int textRotation = GetTextRotation(firstChar, lastChar); // Detect text rotation
+                    int textRotation = 0; // Detect text rotation
                     
                     if (wordX1 >= regionX1 && wordY1 >= regionY1 && wordX2 <= regionX2 && wordY2 <= regionY2)
                     {
+                        // Detect "DATE:" and store its Y1 value
+                        if (word.Text.Trim().Equals("DATE:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            dateY1 = wordY1; // Store Y1 of "DATE:"
+                        }
+
+                        // If "DATE:" was found, skip words with similar Y1 values
+                        if (dateY1.HasValue)
+                        {
+                            if (Math.Abs(wordY1 - dateY1.Value) < 2)
+                            {
+                                continue; // Skip words with similar Y1 values
+                            }
+                        }
+                        
                         textModels.Add(new PdfTextModel(
                             word.Text,
                             wordX1,
@@ -78,22 +97,5 @@ namespace PdfProcessor.Services
             }
             return textModels;
         }
-        private int GetTextRotation(Letter firstChar, Letter lastChar)
-        {
-            // Calculate angle of text based on first and last character positions
-            double deltaX = lastChar.GlyphRectangle.BottomLeft.X - firstChar.GlyphRectangle.BottomLeft.X;
-            double deltaY = lastChar.GlyphRectangle.BottomLeft.Y - firstChar.GlyphRectangle.BottomLeft.Y;
-            
-            double angle = Math.Atan2(deltaY, deltaX) * (180 / Math.PI);
-
-            if (angle >= -10 && angle <= 10)
-                return 0; // Horizontal text
-            if (angle >= 80 && angle <= 100)
-                return 90; // Vertical text (clockwise)
-            if (angle >= 260 && angle <= 280)
-                return 270; // Vertical text (counterclockwise)
-
-            return 0; // Default to horizontal
-        }
     }
-}
+} 

@@ -76,25 +76,22 @@ namespace PdfProcessor.ViewModels
             // var pdfHighlightService = new PdfHighlightService();
             // pdfHighlightService.HighlightPdfRegions(AllFilePath, OutputFolderPath);
             
-            // Save text as .csv and.db
-            // List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
-            //
-            // ExportService exportService = new ExportService();
-            //
-            // exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-            // exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+            //Save text as .csv and.db
+            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
+            
+            ExportService exportService = new ExportService();
+            exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+            exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
             
             // Analyze the database for cable schedule 
-            // CableScheduleService cableScheduleService = new CableScheduleService();
-            // cableScheduleService.ProcessDatabase(AllFilePath);
+            CableScheduleService cableScheduleService = new CableScheduleService();
+            cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
             
             // Analyze the database for cable schedule 
             CoordinateDotService coordinateDotService = new CoordinateDotService();
             coordinateDotService.AnnotatePdfWithDots(AllFilePath, OutputFolderPath);
             
-            
-            
-            System.Windows.MessageBox.Show($"Extraction completed!\nSaved at: {OutputFolderPath}");
+            System.Windows.MessageBox.Show($"Processing complete!");
         }
         
         protected virtual void OnPropertyChanged(string propertyName) =>
