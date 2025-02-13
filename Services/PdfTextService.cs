@@ -46,6 +46,20 @@ namespace PdfProcessor.Services
             double regionY2 = region.TopRight.Y;
             double? dateY1 = null;
             
+            bool dateFoundOnPage = false;
+
+            // First pass: Check if "DATE:" exists on the page
+            foreach (Word word in words)
+            {
+                if (!string.IsNullOrWhiteSpace(word.Text) && word.Text.Trim().Equals("DATE:", StringComparison.OrdinalIgnoreCase))
+                {
+                    dateFoundOnPage = true;
+                    var firstChar = word.Letters.First();
+                    dateY1 = firstChar.GlyphRectangle.BottomLeft.Y; // Store Y1 of "DATE:"
+                    break; // No need to continue checking
+                }
+            }
+            
             foreach (Word word in words)
             {
                 if (!string.IsNullOrWhiteSpace(word.Text))
@@ -68,19 +82,9 @@ namespace PdfProcessor.Services
                     
                     if (wordX1 >= regionX1 && wordY1 >= regionY1 && wordX2 <= regionX2 && wordY2 <= regionY2)
                     {
-                        // Detect "DATE:" and store its Y1 value
-                        if (word.Text.Trim().Equals("DATE:", StringComparison.OrdinalIgnoreCase))
+                        if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
                         {
-                            dateY1 = wordY1; // Store Y1 of "DATE:"
-                        }
-
-                        // If "DATE:" was found, skip words with similar Y1 values
-                        if (dateY1.HasValue)
-                        {
-                            if (Math.Abs(wordY1 - dateY1.Value) < 2)
-                            {
-                                continue; // Skip words with similar Y1 values
-                            }
+                            continue; // Skip words with similar Y1 values
                         }
                         
                         textModels.Add(new PdfTextModel(

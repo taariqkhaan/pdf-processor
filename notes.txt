@@ -42,43 +42,57 @@ Console.WriteLine($"{}");
 
 
 write a program using C#, .NET 8.0.
-accepts a pdf file and output folder path as parameter.
-using PDFpig, detect is pdf pages are rotated in metadata, but not visually.
-if yes, fix the rotation to match the visual rotation.
 
 namespace PdfProcessor.Services
 {
-    public class FixRotationService
+    public class MissingInfoService
     {
         //put logic in a method here
     }
 }
 
+accepts a .db filepath as parameter.
+it has a table called pdf_table.
+with columns: Text, X1, Y1, X2, Y2, TextRotation, SheetNumber, Type and ItemNUmber.
+sort table by ascending SheetNumber, then ascending ItemNumber.
+
+search the Type column and check if there is atleast one instance of the following texts, per unique ItemNumber in a unique SheetNumber.
+'cable_tag'
+'from_desc'
+'to_desc'
+'function'
+'size'
+'insulation'
+'from_ref'
+'to_ref'
+'voltage'
+'conductors'
+'length'
+
+i.e. each one of the above text should appear at least one in the Type column for SheetNumber 1 and ItemNumber 1,
+then  each one of the above text should appear at least one in the Type column for SheetNumber 1 and ItemNumber 2 and so on.
+if a text is not found in the Type column, create a row at the end with the Type, SheetNumber and ItemNumber.
+
 
 Y1_start_line1 = 492
 Y1_start_line2 = 480
 
-
-Y1=Y1_start_line1-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77
-{
-'cable_tag' is missing --> X1 = 25, X2 = X1+40
-'from_desc' --> X1 = 137, X2 = X1+40,
-'to_desc' --> X1 = 275, X2 = X1+40,
-'function'--> X1 = 416, X2 = X1+40,
-'size'--> X1 = 543, X2 = X1+20,
-'insulation'--> X1 = 597, X2 = X1+40,
-}
-
-Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77
-{
-'from_ref'--> X1 = 137, X2 = X1+40,
-'to_ref'--> X1 = 275, X2 = X1+40,
-'voltage'--> X1 = 452, X2 = X1+40,
-'conductors'--> X1 = 530, X2 = X1+20,
-'length'--> X1 = 583, X2 = X1+20,
-}
+Y1=Y1_start_line1-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77 will be the common to the following:
+'cable_tag' is missing --> X1 = 23, X2 = X1+40
+'from_desc' is missing--> X1 = 137, X2 = X1+40,
+'to_desc' is missing--> X1 = 275, X2 = X1+40,
+'function' is missing--> X1 = 416, X2 = X1+40,
+'size' is missing--> X1 = 539, X2 = X1+20,
+'insulation' is missing--> X1 = 593, X2 = X1+40,
 
 
+Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77 will be the common to the following:
+
+'from_ref' is missing--> X1 = 137, X2 = X1+40,
+'to_ref' is missing--> X1 = 275, X2 = X1+40,
+'voltage' is missing--> X1 = 452, X2 = X1+40,
+'conductors' is missing--> X1 = 525, X2 = X1+20,
+'length' is missing--> X1 = 583, X2 = X1+20,
 
 
 

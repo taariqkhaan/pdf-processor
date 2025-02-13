@@ -36,7 +36,7 @@ namespace PdfProcessor.Services
             connection.Open();
 
             string query = @"
-                SELECT SheetNumber, X1, Y1, X2, Y2, Type
+                SELECT SheetNumber, X1, Y1, X2, Y2, Type, Text
                 FROM pdf_table
                 WHERE Type IN ('cable_tag','from_desc','to_desc','function','size','insulation','from_ref','to_ref','voltage','conductors','length')
                 ORDER BY SheetNumber ASC, ItemNumber ASC, Type ASC";
@@ -51,39 +51,50 @@ namespace PdfProcessor.Services
                 double y1 = reader.GetDouble(2);
                 double x2 = reader.GetDouble(3);
                 double y2 = reader.GetDouble(4);
+                string textValue = reader.IsDBNull(6) ? string.Empty : reader.GetString(6).Trim();
 
                 if (pageIndex >= 0 && pageIndex < document.Pages.Count)
                 {
                     PdfPage page = document.Pages[pageIndex];
-                    
-                    // Ensure XGraphics is created and disposed properly
+
                     using (XGraphics gfx = XGraphics.FromPdfPage(page))
                     {
                         double pageHeight = page.Height;
                         double adjustedY1 = pageHeight - y1;
                         double adjustedY2 = pageHeight - y2;
 
-                        // Draw red dots
-                        // XBrush redBrush = XBrushes.Red;
-                        // double dotSize = 5;
-                        //
-                        // gfx.DrawEllipse(redBrush, x1 - dotSize / 2, adjustedY1 - dotSize / 2, dotSize, dotSize);
-                        // gfx.DrawEllipse(redBrush, x2 - dotSize / 2, adjustedY2 - dotSize / 2, dotSize, dotSize);
-                        
                         // Draw the rectangle
                         double rectWidth = x2 - x1;
                         double rectHeight = adjustedY1 - adjustedY2;
-                        
-                        XColor semiTransparentRed = XColor.FromArgb(76, 255, 0, 0);
-                        XSolidBrush redBrush = new XSolidBrush(semiTransparentRed);
+
+                        // Choose color based on text value
+                        XColor color = string.IsNullOrEmpty(textValue)
+                            ? XColor.FromArgb(0, 255, 0, 0) // missing values
+                            : XColor.FromArgb(0, 255, 255, 0); // tags present
+                        XColor fillcolor = string.IsNullOrEmpty(textValue)
+                            ? XColor.FromArgb(50, 255, 0, 0) // missing values
+                            : XColor.FromArgb(50, 255, 255, 0); // tags present
+
+                        double penThickness = 3; // Thickness of the outline
+                        XPen outlinePen = new XPen(color, 1);
+                        XSolidBrush brush = new XSolidBrush(fillcolor);
 
                         if (page.Rotation != 0)
                         {
-                            gfx.TranslateTransform( page.Width - page.Height,page.Height);
+                            gfx.TranslateTransform(page.Width - page.Height, page.Height);
                             gfx.RotateTransform(270);
                         }
-                        gfx.DrawRectangle(redBrush, x1, adjustedY2, rectWidth, rectHeight);
-                    } 
+                        
+                        // Adjust rectangle size & position for outward-growing stroke
+                        double outlineOffset = penThickness / 2;
+                        double adjustedX1 = x1 - outlineOffset;
+                        double adjustedY = adjustedY2 - outlineOffset;
+                        double adjustedWidth = rectWidth + penThickness;
+                        double adjustedHeight = rectHeight + penThickness;
+                        
+                        gfx.DrawRectangle(outlinePen, adjustedX1, adjustedY, adjustedWidth, adjustedHeight);
+                        gfx.DrawRectangle(brush,adjustedX1, adjustedY, adjustedWidth, adjustedHeight);
+                    }
                 }
             }
 

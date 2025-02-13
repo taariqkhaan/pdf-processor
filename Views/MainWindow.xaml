@@ -9,7 +9,7 @@
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen">
 
-    <Grid Margin="10">
+    <Grid Margin="10" IsEnabled="{Binding IsProcessing}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/> 
             <ColumnDefinition Width="Auto"/>

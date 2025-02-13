@@ -6,6 +6,11 @@ namespace PdfProcessor.Services
 {
     public class CableScheduleService
     {
+        private static readonly List<string> RequiredTypes = new() 
+        {
+            "cable_tag", "from_desc", "to_desc", "function", "size", "insulation", 
+            "from_ref", "to_ref", "voltage", "conductors", "length"
+        };
         public void ProcessDatabase(string dbFilePath)
         {
             if (!File.Exists(dbFilePath))
