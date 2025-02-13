@@ -98,19 +98,18 @@ namespace PdfProcessor.ViewModels
             
             //Save text as .csv and.db
             List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
-            //List<PdfTextModel> extractedData = _pdfTextServiceMultiCore.ExtractTextAndCoordinates(AllFilePath);
             
-            ExportService exportService = new ExportService();
-            exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-            exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+             ExportService exportService = new ExportService();
+             exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+             exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
             
             // Analyze the database for cable schedule 
             CableScheduleService cableScheduleService = new CableScheduleService();
             cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
             
             // Identify missing information the database for cable schedule 
-            MissingInfoService missingInfoService = new MissingInfoService();
-            missingInfoService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+            // MissingInfoService missingInfoService = new MissingInfoService();
+            // missingInfoService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
             
             // Analyze the database for cable schedule 
             CoordinateDotService coordinateDotService = new CoordinateDotService();

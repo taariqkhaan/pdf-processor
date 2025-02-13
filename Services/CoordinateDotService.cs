@@ -70,10 +70,10 @@ namespace PdfProcessor.Services
                         // Choose color based on text value
                         XColor color = string.IsNullOrEmpty(textValue)
                             ? XColor.FromArgb(0, 255, 0, 0) // missing values
-                            : XColor.FromArgb(0, 255, 255, 0); // tags present
+                            : XColor.FromArgb(0, 255, 230, 0); // tags present
                         XColor fillcolor = string.IsNullOrEmpty(textValue)
-                            ? XColor.FromArgb(50, 255, 0, 0) // missing values
-                            : XColor.FromArgb(50, 255, 255, 0); // tags present
+                            ? XColor.FromArgb(80, 255, 0, 0) // missing values
+                            : XColor.FromArgb(80, 255, 230, 0); // tags present
 
                         double penThickness = 3; // Thickness of the outline
                         XPen outlinePen = new XPen(color, 1);

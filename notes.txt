@@ -95,6 +95,9 @@ Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77 will be the common to the
 'length' is missing--> X1 = 583, X2 = X1+20,
 
 
+('cable_tag','from_desc','to_desc','function','size','insulation','from_ref','to_ref','voltage','conductors','length')
+
+
 
 
 

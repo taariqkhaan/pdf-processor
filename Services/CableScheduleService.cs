@@ -159,6 +159,8 @@ namespace PdfProcessor.Services
                 };
             }
             
+            Console.WriteLine($"{x1},{y1}");
+            
             return string.Empty;
         }
 
