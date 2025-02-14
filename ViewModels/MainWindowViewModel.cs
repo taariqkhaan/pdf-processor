@@ -129,7 +129,7 @@ namespace PdfProcessor.ViewModels
                 Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
 
             });
-            System.Windows.MessageBox.Show($"Processing complete!");
+            System.Windows.MessageBox.Show($"Processing success!");
             IsEnabled = true;
         }
         
