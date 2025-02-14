@@ -5,11 +5,12 @@ namespace PdfProcessor.Services
 {
     public class CableScheduleService
     {
-        private static readonly List<string> RequiredTypes = new() 
+        private static readonly List<string> RequiredTypes = new()
         {
-            "cable_tag", "from_desc", "to_desc", "function", "size", "insulation", 
+            "cable_tag", "from_desc", "to_desc", "function", "size", "insulation",
             "from_ref", "to_ref", "voltage", "conductors", "length"
         };
+
         public void ProcessDatabase(string dbFilePath)
         {
             if (!File.Exists(dbFilePath))
@@ -60,7 +61,8 @@ namespace PdfProcessor.Services
 
                 if (!itemNumberColumnExists)
                 {
-                    using (var alterCmd = new SQLiteCommand("ALTER TABLE pdf_table ADD COLUMN ItemNumber TEXT;", connection))
+                    using (var alterCmd =
+                           new SQLiteCommand("ALTER TABLE pdf_table ADD COLUMN ItemNumber TEXT;", connection))
                     {
                         alterCmd.ExecuteNonQuery();
                     }
@@ -70,18 +72,44 @@ namespace PdfProcessor.Services
 
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
-            string selectQuery = "SELECT rowid, X1, Y1, SheetNumber FROM pdf_table ORDER BY SheetNumber, Y1 DESC;";
-            
+            string selectQuery =
+                "SELECT rowid, X1, Y1, SheetNumber, Text FROM pdf_table ORDER BY SheetNumber, Y1 DESC;";
+
+            var reportX1BySheet = new Dictionary<int, double>();
+            var reportY1BySheet = new Dictionary<int, double>();
+
+            using (var cmd = new SQLiteCommand(selectQuery, connection))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                    string text = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+
+                    if (text.Equals("REPORT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
+                        double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
+                        reportX1BySheet[sheetNumber] = x1;
+                        reportY1BySheet[sheetNumber] = y1;
+                    }
+                }
+            }
+
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
             {
                 int lastSheetNumber = -1;
                 int itemNumber = 1;
                 double y1_current = 0;
-                
-                // Start Transaction
+                double x1_current = 0;
+                bool y1_current_set = false;
+
                 using (var transaction = connection.BeginTransaction())
-                using (var updateCmd = new SQLiteCommand("UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;", connection, transaction))
+                using (var updateCmd =
+                       new SQLiteCommand(
+                           "UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;",
+                           connection, transaction))
                 {
                     updateCmd.Parameters.Add(new SQLiteParameter("@Type"));
                     updateCmd.Parameters.Add(new SQLiteParameter("@ItemNumber"));
@@ -94,73 +122,89 @@ namespace PdfProcessor.Services
                         double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
                         int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
 
-                        if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
+                        if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber )
                         {
-                            y1_current = y1;
+                            x1_current = reportX1BySheet[sheetNumber];
+                            y1_current = reportY1BySheet[sheetNumber] - 70;
                             itemNumber = 1;
                             lastSheetNumber = sheetNumber;
                         }
 
+                        // filters out all the lines below report but above the cable item
+                        if (y1 > y1_current)
+                        {
+                            continue;
+                        }
+                        
+                        if (!y1_current_set)
+                        {
+                            y1_current = y1;
+                            y1_current_set = true;
+                        }
+                        
+                        // Switches control for Y1 current to the second line of a cable item
                         if (Math.Abs(y1 - y1_current) > 17)
                         {
                             y1_current = y1;
                             itemNumber += 1;
                         }
+                        
+                        string tag = IsValidTag(x1, y1, ref x1_current, ref y1_current);
 
-                        string tag = IsValidTag(x1, y1, ref y1_current);
                         if (!string.IsNullOrEmpty(tag))
                         {
-                            // Use parameterized query to avoid overhead
                             updateCmd.Parameters["@Type"].Value = tag;
                             updateCmd.Parameters["@ItemNumber"].Value = itemNumber;
                             updateCmd.Parameters["@RowId"].Value = rowId;
                             updateCmd.ExecuteNonQuery();
                         }
                     }
-                    
-                    // Commit Transaction
+
                     transaction.Commit();
                 }
             }
         }
 
-        
-        private string IsValidTag(double x1, double y1, ref double y1_current)
+
+        private string IsValidTag(double x1, double y1, ref double x1_current, ref double y1_current)
         {
-            if (Math.Abs(y1 - y1_current) < 2)
+            if (Math.Abs(y1 - y1_current) < 5)
+            {
+                return x1 switch
+                { 
+                    _ when x1 > x1_current * 0.8 && x1 <= x1_current + 100 => "cable_tag",
+                    // _ when x1 > reportX1 + 114 * 0.97 && x1 <= reportX1 + 270 => "from_desc",
+                    // _ when x1 > reportX1 + 138 * 0.97 && x1 <= reportX1 + 410 => "to_desc",
+                    // _ when x1 > reportX1 + 141 * 0.97 && x1 <= reportX1 + 467 => "function",
+                    // _ when x1 > reportX1 + 123 * 0.97 && x1 <= reportX1 + 594 => "size",
+                    // _ when x1 > reportX1 + 54 * 0.97 && x1 <= reportX1 + 650 => "insulation",
+                    _ => string.Empty
+                };
+            }
+
+            if (Math.Abs(y1 - y1_current) > 5)
             {
                 return x1 switch
                 {
-                    _ when x1 > 23 * 0.97 && x1 <= 133 => "cable_tag",
-                    _ when x1 > 137 * 0.97 && x1 <= 270 => "from_desc",
-                    _ when x1 > 275 * 0.97 && x1 <= 410 => "to_desc",
-                    _ when x1 > 416 * 0.97 && x1 <= 467 => "function",
-                    _ when x1 > 539 * 0.97 && x1 <= 594 => "size",
-                    _ when x1 > 593 * 0.97 && x1 <= 650 => "insulation",
-                    _ => string.Empty // Default case if no condition is met
+                    // _ when x1 > reportX1 + 137 * 0.97 && x1 <= reportX1 + 270 => "from_ref",
+                    // _ when x1 > reportX1 + 275 * 0.97 && x1 <= reportX1 + 410 => "to_ref",
+                    // _ when x1 > reportX1 + 452 * 0.97 && x1 <= reportX1 + 500 => "voltage",
+                    // _ when x1 > reportX1 + 525 * 0.97 && x1 <= reportX1 + 560 => "conductors",
+                    // _ when x1 > reportX1 + 583 * 0.97 && x1 <= reportX1 + 597 => "length",
+                    _ => string.Empty
                 };
             }
-            if (Math.Abs(y1 - y1_current) > 2)
-            {
-                return x1 switch
-                {
-                    _ when x1 > 137 * 0.97 && x1 <= 270 => "from_ref",
-                    _ when x1 > 275 * 0.97 && x1 <= 410 => "to_ref",
-                    _ when x1 > 452 * 0.97 && x1 <= 500 => "voltage",
-                    _ when x1 > 525 * 0.97 && x1 <= 560 => "conductors",
-                    _ when x1 > 583 * 0.97 && x1 <= 597 => "length",
-                    _ => string.Empty // Default case if no condition is met
-                };
-            }
-            
+
             Console.WriteLine($"{x1},{y1}");
-            
             return string.Empty;
         }
 
         private void UpdateDatabase(SQLiteConnection connection, int rowId, string typeValue, int itemNumber)
         {
-            using (var updateCmd = new SQLiteCommand("UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;", connection))
+            using (var updateCmd =
+                   new SQLiteCommand(
+                       "UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;",
+                       connection))
             {
                 updateCmd.Parameters.AddWithValue("@Type", typeValue);
                 updateCmd.Parameters.AddWithValue("@ItemNumber", itemNumber);
@@ -168,6 +212,5 @@ namespace PdfProcessor.Services
                 updateCmd.ExecuteNonQuery();
             }
         }
-
     }
 }
