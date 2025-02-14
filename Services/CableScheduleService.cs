@@ -1,6 +1,5 @@
 ﻿using System.Data.SQLite;
 using System.IO;
-using System.Diagnostics;
 
 namespace PdfProcessor.Services
 {
@@ -18,8 +17,6 @@ namespace PdfProcessor.Services
                 Console.WriteLine("Database file not found.");
                 return;
             }
-            
-            Stopwatch stopwatch = Stopwatch.StartNew(); // Start measuring time
 
             try
             {
@@ -34,9 +31,6 @@ namespace PdfProcessor.Services
             {
                 Console.WriteLine($"Error processing database: {ex.Message}");
             }
-            
-            stopwatch.Stop(); // Stop measuring time
-            Console.WriteLine($"Total Execution CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
         }
 
         private void EnsureColumnsExist(SQLiteConnection connection)

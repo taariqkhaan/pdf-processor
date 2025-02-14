@@ -152,3 +152,5 @@ C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\PdfSharp.WPFonts.dll
 C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\PdfSharp.dll
 C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\System.Security.Cryptography.Pkcs.dll
 C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
+E:\GitHub\pdf-processor\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+E:\GitHub\pdf-processor\obj\Debug\net8.0-windows\PdfProcessor_MarkupCompile.lref

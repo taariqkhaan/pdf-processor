@@ -2,7 +2,7 @@
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
-using System.Diagnostics;
+
 
 namespace PdfProcessor.Services
 {
@@ -16,7 +16,7 @@ namespace PdfProcessor.Services
         }
         public List<PdfTextModel> ExtractTextAndCoordinates(string pdfPath)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew(); // Start measuring time
+            
             List<PdfTextModel> extractedText = new List<PdfTextModel>();
 
             using (PdfDocument document = PdfDocument.Open(pdfPath))
@@ -31,8 +31,6 @@ namespace PdfProcessor.Services
                     pageNumber++;
                 }
             }
-            stopwatch.Stop(); // Stop measuring time
-            Console.WriteLine($"Total Execution PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
             return extractedText;
         }
         private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation, int pageNumber)

@@ -3,13 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PdfProcessor.ViewModels"
         mc:Ignorable="d"
-        Title="PDF Text Extractor" Height="Auto" Width="600"
+        Title="Cable Schedule QC" Height="Auto" Width="600"
         SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen">
+    <Window.DataContext>
+        <local:MainWindowViewModel/>
+    </Window.DataContext>
 
-    <Grid Margin="10" IsEnabled="{Binding IsProcessing}">
+    <Grid Margin="10" IsEnabled="{Binding IsEnabled}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/> 
             <ColumnDefinition Width="Auto"/>
@@ -59,7 +63,7 @@
                 FontSize="14"
                 HorizontalAlignment="Center"
                 Content="Process" 
-                Command="{Binding ExtractAndSaveCommand}"/>
+                Command="{Binding ProcessCommand}"/>
     </Grid>
 </Window>
 

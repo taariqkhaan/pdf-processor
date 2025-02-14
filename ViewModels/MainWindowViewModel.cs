@@ -1,33 +1,26 @@
-﻿using Microsoft.Win32;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
+using System.Diagnostics;
 using System.Windows.Input;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using PdfProcessor.Helpers;
+using System.Windows.Forms;
 using PdfProcessor.Models;
 using PdfProcessor.Services;
-using System.Runtime.CompilerServices;
 
 
 namespace PdfProcessor.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        private bool _isProcessing = true;
+        private bool _isEnabled = true;
+        
         private string _allFilePath;
         private string _outputFolderPath;
         private readonly PdfTextService _pdfTextService;
-        private readonly PdfTextServiceMultiCore _pdfTextServiceMultiCore;
         
-        public bool IsProcessing
+        public bool IsEnabled
         {
-            get => _isProcessing;
-            set
-            {
-                _isProcessing = value;
-                OnPropertyChanged();
-                ((RelayCommand)ExtractAndSaveCommand).RaiseCanExecuteChanged();
-            }
+            get => _isEnabled;
+            set { _isEnabled = value; OnPropertyChanged(nameof(IsEnabled)); }
         }
 
         public string AllFilePath
@@ -44,86 +37,122 @@ namespace PdfProcessor.ViewModels
 
         public ICommand BrowseFileCommand { get; }
         public ICommand BrowseOutputFolderCommand { get; }
-        public ICommand ExtractAndSaveCommand { get; }
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        public ICommand ProcessCommand { get; }
 
         public MainWindowViewModel()
         {
             var pdfRegionService = new PdfRegionService();
             _pdfTextService = new PdfTextService(pdfRegionService);
-            _pdfTextServiceMultiCore = new PdfTextServiceMultiCore(pdfRegionService);
             
             BrowseFileCommand = new RelayCommand(BrowseFile);
             BrowseOutputFolderCommand = new RelayCommand(BrowseOutputFolder);
-            ExtractAndSaveCommand = new RelayCommand(Process, () => IsProcessing);
+            ProcessCommand = new RelayCommand(async () => await Process(), () => IsEnabled);
 
         }
 
         private void BrowseFile()
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "All Files (*.*)|*.*" };
-            if (openFileDialog.ShowDialog() == true)
-                AllFilePath = openFileDialog.FileName;
-        }
-
-        private void BrowseOutputFolder()
-        {
-            var dialog = new CommonOpenFileDialog
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                IsFolderPicker = true
-            };
-
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                OutputFolderPath = dialog.FileName;
+                openFileDialog.Filter = "All Files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    AllFilePath = openFileDialog.FileName;
+                }
             }
         }
-
-        private void Process()
+        
+        private void BrowseOutputFolder()
         {
-            if (!IsProcessing) return; // Prevent multiple clicks
-
-            IsProcessing = false; // Grey out UI
+            using (var dialog = new FolderBrowserDialog())
+            {
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    OutputFolderPath = dialog.SelectedPath;
+                }
+            }
+        }
+        
+        private async Task Process()
+        {
+            IsEnabled = false;
             
             if (string.IsNullOrEmpty(AllFilePath) || string.IsNullOrEmpty(OutputFolderPath))
             {
                 System.Windows.MessageBox.Show("Please select a file and an output folder.");
+                IsEnabled = true;
                 return;
             }
-            
-            // Highlight a section 
-            // var pdfHighlightService = new PdfHighlightService();
-            // pdfHighlightService.HighlightPdfRegions(AllFilePath, OutputFolderPath);
-            
-            //Save text as .csv and.db
-            List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
-            
-             ExportService exportService = new ExportService();
-             exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-             exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
-            
-            // Analyze the database for cable schedule 
-            CableScheduleService cableScheduleService = new CableScheduleService();
-            cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-            
-            // Identify missing information the database for cable schedule 
-            // MissingInfoService missingInfoService = new MissingInfoService();
-            // missingInfoService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-            
-            // Analyze the database for cable schedule 
-            CoordinateDotService coordinateDotService = new CoordinateDotService();
-            coordinateDotService.AnnotatePdfWithDots(AllFilePath, OutputFolderPath);
-            
-            IsProcessing = true;
+
+            await Task.Run(() =>
+            {
+                // Highlight a section 
+                // var pdfHighlightService = new PdfHighlightService();
+                // pdfHighlightService.HighlightPdfRegions(AllFilePath, OutputFolderPath);
+
+                //Extract text
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
+                stopwatch.Stop();
+                Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
+
+                // Save text in .csv and .db format
+                ExportService exportService = new ExportService();
+                stopwatch = Stopwatch.StartNew();
+                exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+                stopwatch.Stop();
+                Console.WriteLine($"SaveToCsv Time: {stopwatch.ElapsedMilliseconds} ms");
+                stopwatch = Stopwatch.StartNew();
+                exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+                stopwatch.Stop();
+                Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
+
+                // Analyze the database for cable schedule 
+                CableScheduleService cableScheduleService = new CableScheduleService();
+                stopwatch = Stopwatch.StartNew();
+                cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                stopwatch.Stop();
+                Console.WriteLine($"CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
+
+                // Identify missing information the database for cable schedule 
+                MissingInfoService missingInfoService = new MissingInfoService();
+                stopwatch = Stopwatch.StartNew();
+                missingInfoService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                stopwatch.Stop();
+                Console.WriteLine($"Missing Information Time: {stopwatch.ElapsedMilliseconds} ms");
+
+                // Analyze the database for cable schedule 
+                CoordinateDotService coordinateDotService = new CoordinateDotService();
+                stopwatch = Stopwatch.StartNew();
+                coordinateDotService.AnnotatePdfWithDots(AllFilePath, OutputFolderPath);
+                stopwatch.Stop();
+                Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
+
+            });
             System.Windows.MessageBox.Show($"Processing complete!");
-            
+            IsEnabled = true;
         }
         
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+    }
+    public class RelayCommand : ICommand
+    {
+        private readonly Action _execute;
+        private readonly Func<bool> _canExecute;
+
+        public RelayCommand(Action execute, Func<bool> canExecute = null)
+        {
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
+        public void Execute(object parameter) => _execute();
+        public event EventHandler CanExecuteChanged;
     }
 }
