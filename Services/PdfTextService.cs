@@ -8,12 +8,6 @@ namespace PdfProcessor.Services
 {
     public class PdfTextService
     {
-        private readonly PdfRegionService _pdfRegionService;
-        
-        public PdfTextService(PdfRegionService pdfRegionService)
-        {
-            _pdfRegionService = pdfRegionService;
-        }
         public List<PdfTextModel> ExtractTextAndCoordinates(string pdfPath)
         {
             
@@ -25,25 +19,18 @@ namespace PdfProcessor.Services
                 
                 foreach (Page page in document.GetPages())
                 {
-                    PdfRectangle regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
-                    extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value, pageNumber));
-                    
+                    extractedText.AddRange(ExtractTextFromPage(page, page.Rotation.Value, pageNumber));
                     pageNumber++;
                 }
             }
             return extractedText;
         }
-        private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation, int pageNumber)
+        private List<PdfTextModel> ExtractTextFromPage(Page page, int rotation, int pageNumber)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
             List<Word> words = page.GetWords().ToList();
-            
-            double regionX1 = region.BottomLeft.X;
-            double regionY1 = region.BottomLeft.Y;
-            double regionX2 = region.TopRight.X;
-            double regionY2 = region.TopRight.Y;
+
             double? dateY1 = null;
-            
             bool dateFoundOnPage = false;
 
             // First pass: Check if "DATE:" exists on the page
@@ -78,23 +65,21 @@ namespace PdfProcessor.Services
                     
                     int textRotation = 0; // Detect text rotation
                     
-                    if (wordX1 >= regionX1 && wordY1 >= regionY1 && wordX2 <= regionX2 && wordY2 <= regionY2)
+                    if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
                     {
-                        if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
-                        {
-                            continue; // Skip words with similar Y1 values
-                        }
-                        
-                        textModels.Add(new PdfTextModel(
-                            word.Text,
-                            wordX1,
-                            wordY1,
-                            wordX2,
-                            wordY2,
-                            textRotation,
-                            pageNumber
-                        ));
+                        continue; // Skip words with similar Y1 values
                     }
+
+                    textModels.Add(new PdfTextModel(
+                        word.Text,
+                        wordX1,
+                        wordY1,
+                        wordX2,
+                        wordY2,
+                        textRotation,
+                        pageNumber
+                    ));
+                    
                 }
             }
             return textModels;
