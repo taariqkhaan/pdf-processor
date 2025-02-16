@@ -58,12 +58,19 @@ namespace PdfProcessor.Services
                     double wordY2 = lastChar.GlyphRectangle.TopRight.Y;
                     
                     // Smaller characters like . or * can have smaller Y2 value
-                    if (Math.Abs(wordY1 - wordY2) < 5)
+                    if (Math.Abs(wordY1 - wordY2) < 5 )
                     {
-                        wordY2 = wordY1 + 5.77;
+                        if (word.Text.Contains("\"") || word.Text.Contains("'"))
+                        {
+                            wordY1 = wordY2 - 5.77;
+                        }
+                        else
+                        {
+                            wordY2 = wordY1 + 5.77;
+                        }
                     }
                     
-                    int textRotation = 0; // Detect text rotation
+                    int textRotation = DetermineWordRotation(word);
                     
                     if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
                     {
@@ -84,5 +91,27 @@ namespace PdfProcessor.Services
             }
             return textModels;
         }
+        
+        private int DetermineWordRotation(Word word)
+        {
+            // Get the first and last letters' center positions 
+            // (or use BottomLeft, TopRight, etc. as you prefer).
+            Letter firstLetter = word.Letters.First();
+            Letter lastLetter  = word.Letters.Last();
+
+            // Compute a simple vector from the first letter to the last letter.
+            double deltaX = lastLetter.GlyphRectangle.BottomLeft.X - firstLetter.GlyphRectangle.BottomLeft.X;
+            double deltaY = lastLetter.GlyphRectangle.BottomLeft.Y - firstLetter.GlyphRectangle.BottomLeft.Y;
+
+            // Decide if the word is predominantly horizontal or vertical
+            if (Math.Abs(deltaX) >= Math.Abs(deltaY))
+            {
+                return (deltaX >= 0) ? 0 : 180;
+            }
+            
+            return (deltaY >= 0) ? 90 : 270;
+            
+        }
+
     }
 } 

@@ -98,24 +98,104 @@ Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1+5.77 will be the common to the
 ('cable_tag','from_desc','to_desc','function','size','insulation','from_ref','to_ref','voltage','conductors','length')
 
 
+{ "cable_tag", (23, 63, true) },
+{ "from_desc", (137, 177, true) },
+{ "to_desc", (275, 315, true) },
+{ "function", (416, 456, true) },
+{ "size", (539, 559, true) },
+{ "insulation", (593, 633, true) },
+{ "from_ref", (137, 177, false) },
+{ "to_ref", (275, 315, false) },
+{ "voltage", (452, 492, false) },
+{ "conductors", (525, 545, false) },
+{ "length", (583, 590, false) }
+-----------------------------------------------
+write a program using C#, .NET 8.0.
+using System.Data.SQLite;
+
+namespace PdfProcessor.Services
+{
+    public class MissingTagService
+    {
+        //put logic in a method here
+    }
+}
+
+accepts a .db filepath as parameter.
+it has a table called pdf_table.
+with columns: Text, X1, Y1, X2, Y2, TextRotation, SheetNumber, Type and ItemNUmber.
+sort table by ascending SheetNumber, then ascending ItemNumber.
+
+
+go row by row.
+check create a list of unique values in the Type column, until ItemNumber changes.
+compare the list with this list ""cable_tag", "from_desc", "to_desc", "function", "size", "insulation", "from_ref", "to_ref", "voltage", "conductors", "length""
+add rows at the end for all missing types with the corresponding sheet and item number.
+Repeat the process for next itemnumber.
+
+
+x1 = x1_low , y1 =  => "cable_tag",
+_ when x1 > x1_current + 100 && x1 <= x1_current + 230 => "from_desc",
+_ when x1 > x1_current + 231 && x1 <= x1_current + 360 => "to_desc",
+_ when x1 > x1_current + 361 && x1 <= x1_current + 420 => "function",
+_ when x1 > x1_current + 486 && x1 <= x1_current + 530 => "size",
+_ when x1 > x1_current + 540 && x1 <= x1_current + 700 => "insulation",
+ 
+_ when x1 > x1_current + 100 && x1 <= x1_current + 230 => "from_ref",
+_ when x1 > x1_current + 231 && x1 <= x1_current + 360 => "to_ref",
+_ when x1 > x1_current + 400 && x1 <= x1_current + 450 => "voltage",
+_ when x1 > x1_current + 450 && x1 <= x1_current + 520 => "conductors",
+_ when x1 > x1_current + 521 && x1 <= x1_current + 566 => "length", 
 
 
 
 
 
+this function is where ItemNumber changes. 
+Keep a list of all the entires made in the Type column for any given ItemNUmber.
+when the control goes inside this function i.e. Itemnumber changes, execute a missingtag function.
+
+missing tag function will accept the (list of all unique entries made in the Type column, sheetnumber, itenumber, x1_current, y1_current)
+
+add rows fo all missing entries to the database with the sheet number, itemnumber, type and following x1,y1, x2, y2 values
+
+Y1_start_line1 = y1_current + 30
+Y1_start_line2 = y1_current
+
+Y1=Y1_start_line1-(30*(ItemNUmber - 1)) , Y2 = Y1 + 5.77 will be the common to the following:
+'cable_tag' is missing --> X1 = x1_current, X2 = X1+40
+'from_desc' is missing--> X1 = x1_current + 100, X2 = X1+40,
+'to_desc' is missing--> X1 = x1_current + 231, X2 = X1+40,
+'function' is missing--> X1 = x1_current + 361, X2 = X1+40,
+'size' is missing--> X1 = x1_current + 486, X2 = X1+20,
+'insulation' is missing--> X1 = x1_current + 540, X2 = X1+40,
 
 
+Y1=Y1_start_line2-(30*(ItemNUmber - 1)) , Y2 = Y1 + 5.77 will be the common to the following:
+
+'from_ref' is missing--> X1 = x1_current + 100, X2 = X1+40,
+'to_ref' is missing--> X1 = x1_current + 231, X2 = X1+40,
+'voltage' is missing--> X1 = x1_current + 400, X2 = X1+40,
+'conductors' is missing--> X1 = x1_current + 450, X2 = X1+20,
+'length' is missing--> X1 = x1_current + 521, X2 = X1+20,
+
+make sure to reset the list anytime the itemnumber changes.
 
 
+-------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
+namespace PdfProcessor.Services;
+public class DrawingService
+{
+    public void ExtractText(string pdfPath, string outputFolder)
+    {
+    
+    
+write a c# code using .net 8.0 and pdfpig to extract texts from pdf.
+add a function to save the word, 
+bottom-left coordinate of first character,
+top-right coordinate of last character of the word,
+sheet number to csv in the output folder passed on the parameter.
 
 
 

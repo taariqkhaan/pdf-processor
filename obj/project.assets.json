@@ -245,6 +245,55 @@
           }
         }
       },
+      "PdfPig/0.1.10-alpha-20250209-1660c": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/UglyToad.PdfPig.Core.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Fonts.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Package.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokenization.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokens.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.dll": {
+            "related": ".Core.pdb;.Core.xml;.DocumentLayoutAnalysis.pdb;.DocumentLayoutAnalysis.xml;.Fonts.pdb;.Fonts.xml;.Package.pdb;.Package.xml;.pdb;.Tokenization.pdb;.Tokenization.xml;.Tokens.pdb;.Tokens.xml;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/UglyToad.PdfPig.Core.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Fonts.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Package.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokenization.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokens.dll": {
+            "related": ".pdb;.xml"
+          },
+          "lib/net8.0/UglyToad.PdfPig.dll": {
+            "related": ".Core.pdb;.Core.xml;.DocumentLayoutAnalysis.pdb;.DocumentLayoutAnalysis.xml;.Fonts.pdb;.Fonts.xml;.Package.pdb;.Package.xml;.pdb;.Tokenization.pdb;.Tokenization.xml;.Tokens.pdb;.Tokens.xml;.xml"
+          }
+        }
+      },
       "PDFsharp/6.2.0-preview-3": {
         "type": "package",
         "dependencies": {
@@ -1235,6 +1284,124 @@
         "version.txt"
       ]
     },
+    "PdfPig/0.1.10-alpha-20250209-1660c": {
+      "sha512": "k7gPjKY9d9ruhTxXT0DgAM6cgLGtHgV92yvb4j5dHuPLLzWIH0TFyKfZFeDAzu28XNHKunamDWYRy6fT9VeOVQ==",
+      "type": "package",
+      "path": "pdfpig/0.1.10-alpha-20250209-1660c",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net462/UglyToad.PdfPig.Core.dll",
+        "lib/net462/UglyToad.PdfPig.Core.pdb",
+        "lib/net462/UglyToad.PdfPig.Core.xml",
+        "lib/net462/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+        "lib/net462/UglyToad.PdfPig.DocumentLayoutAnalysis.pdb",
+        "lib/net462/UglyToad.PdfPig.DocumentLayoutAnalysis.xml",
+        "lib/net462/UglyToad.PdfPig.Fonts.dll",
+        "lib/net462/UglyToad.PdfPig.Fonts.pdb",
+        "lib/net462/UglyToad.PdfPig.Fonts.xml",
+        "lib/net462/UglyToad.PdfPig.Package.dll",
+        "lib/net462/UglyToad.PdfPig.Package.pdb",
+        "lib/net462/UglyToad.PdfPig.Package.xml",
+        "lib/net462/UglyToad.PdfPig.Tokenization.dll",
+        "lib/net462/UglyToad.PdfPig.Tokenization.pdb",
+        "lib/net462/UglyToad.PdfPig.Tokenization.xml",
+        "lib/net462/UglyToad.PdfPig.Tokens.dll",
+        "lib/net462/UglyToad.PdfPig.Tokens.pdb",
+        "lib/net462/UglyToad.PdfPig.Tokens.xml",
+        "lib/net462/UglyToad.PdfPig.dll",
+        "lib/net462/UglyToad.PdfPig.pdb",
+        "lib/net462/UglyToad.PdfPig.xml",
+        "lib/net471/UglyToad.PdfPig.Core.dll",
+        "lib/net471/UglyToad.PdfPig.Core.pdb",
+        "lib/net471/UglyToad.PdfPig.Core.xml",
+        "lib/net471/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+        "lib/net471/UglyToad.PdfPig.DocumentLayoutAnalysis.pdb",
+        "lib/net471/UglyToad.PdfPig.DocumentLayoutAnalysis.xml",
+        "lib/net471/UglyToad.PdfPig.Fonts.dll",
+        "lib/net471/UglyToad.PdfPig.Fonts.pdb",
+        "lib/net471/UglyToad.PdfPig.Fonts.xml",
+        "lib/net471/UglyToad.PdfPig.Package.dll",
+        "lib/net471/UglyToad.PdfPig.Package.pdb",
+        "lib/net471/UglyToad.PdfPig.Package.xml",
+        "lib/net471/UglyToad.PdfPig.Tokenization.dll",
+        "lib/net471/UglyToad.PdfPig.Tokenization.pdb",
+        "lib/net471/UglyToad.PdfPig.Tokenization.xml",
+        "lib/net471/UglyToad.PdfPig.Tokens.dll",
+        "lib/net471/UglyToad.PdfPig.Tokens.pdb",
+        "lib/net471/UglyToad.PdfPig.Tokens.xml",
+        "lib/net471/UglyToad.PdfPig.dll",
+        "lib/net471/UglyToad.PdfPig.pdb",
+        "lib/net471/UglyToad.PdfPig.xml",
+        "lib/net6.0/UglyToad.PdfPig.Core.dll",
+        "lib/net6.0/UglyToad.PdfPig.Core.pdb",
+        "lib/net6.0/UglyToad.PdfPig.Core.xml",
+        "lib/net6.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+        "lib/net6.0/UglyToad.PdfPig.DocumentLayoutAnalysis.pdb",
+        "lib/net6.0/UglyToad.PdfPig.DocumentLayoutAnalysis.xml",
+        "lib/net6.0/UglyToad.PdfPig.Fonts.dll",
+        "lib/net6.0/UglyToad.PdfPig.Fonts.pdb",
+        "lib/net6.0/UglyToad.PdfPig.Fonts.xml",
+        "lib/net6.0/UglyToad.PdfPig.Package.dll",
+        "lib/net6.0/UglyToad.PdfPig.Package.pdb",
+        "lib/net6.0/UglyToad.PdfPig.Package.xml",
+        "lib/net6.0/UglyToad.PdfPig.Tokenization.dll",
+        "lib/net6.0/UglyToad.PdfPig.Tokenization.pdb",
+        "lib/net6.0/UglyToad.PdfPig.Tokenization.xml",
+        "lib/net6.0/UglyToad.PdfPig.Tokens.dll",
+        "lib/net6.0/UglyToad.PdfPig.Tokens.pdb",
+        "lib/net6.0/UglyToad.PdfPig.Tokens.xml",
+        "lib/net6.0/UglyToad.PdfPig.dll",
+        "lib/net6.0/UglyToad.PdfPig.pdb",
+        "lib/net6.0/UglyToad.PdfPig.xml",
+        "lib/net8.0/UglyToad.PdfPig.Core.dll",
+        "lib/net8.0/UglyToad.PdfPig.Core.pdb",
+        "lib/net8.0/UglyToad.PdfPig.Core.xml",
+        "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+        "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.pdb",
+        "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.xml",
+        "lib/net8.0/UglyToad.PdfPig.Fonts.dll",
+        "lib/net8.0/UglyToad.PdfPig.Fonts.pdb",
+        "lib/net8.0/UglyToad.PdfPig.Fonts.xml",
+        "lib/net8.0/UglyToad.PdfPig.Package.dll",
+        "lib/net8.0/UglyToad.PdfPig.Package.pdb",
+        "lib/net8.0/UglyToad.PdfPig.Package.xml",
+        "lib/net8.0/UglyToad.PdfPig.Tokenization.dll",
+        "lib/net8.0/UglyToad.PdfPig.Tokenization.pdb",
+        "lib/net8.0/UglyToad.PdfPig.Tokenization.xml",
+        "lib/net8.0/UglyToad.PdfPig.Tokens.dll",
+        "lib/net8.0/UglyToad.PdfPig.Tokens.pdb",
+        "lib/net8.0/UglyToad.PdfPig.Tokens.xml",
+        "lib/net8.0/UglyToad.PdfPig.dll",
+        "lib/net8.0/UglyToad.PdfPig.pdb",
+        "lib/net8.0/UglyToad.PdfPig.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.Core.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.Core.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.Core.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.DocumentLayoutAnalysis.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.DocumentLayoutAnalysis.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.Fonts.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.Fonts.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.Fonts.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.Package.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.Package.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.Package.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokenization.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokenization.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokenization.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokens.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokens.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.Tokens.xml",
+        "lib/netstandard2.0/UglyToad.PdfPig.dll",
+        "lib/netstandard2.0/UglyToad.PdfPig.pdb",
+        "lib/netstandard2.0/UglyToad.PdfPig.xml",
+        "pdfpig.0.1.10-alpha-20250209-1660c.nupkg.sha512",
+        "pdfpig.nuspec",
+        "pdfpig.png"
+      ]
+    },
     "PDFsharp/6.2.0-preview-3": {
       "sha512": "3jN4zalUB+fyAlsw5C58kvc4W/TWE4+7LGCFoeI37yNP9/fNVSIjmCPGtzIipptnENAuiS95Q4OyZUEVxp4XPw==",
       "type": "package",
@@ -2108,6 +2275,7 @@
     "net8.0-windows7.0": [
       "Microsoft-WindowsAPICodePack-Shell >= 1.1.5",
       "PDFsharp >= 6.2.0-preview-3",
+      "PdfPig >= 0.1.10-alpha-20250209-1660c",
       "System.Data.SQLite >= 1.0.119",
       "UglyToad.PdfPig >= 1.7.0-custom-5"
     ]
@@ -2169,6 +2337,10 @@
           "PDFsharp": {
             "target": "Package",
             "version": "[6.2.0-preview-3, )"
+          },
+          "PdfPig": {
+            "target": "Package",
+            "version": "[0.1.10-alpha-20250209-1660c, )"
           },
           "System.Data.SQLite": {
             "target": "Package",

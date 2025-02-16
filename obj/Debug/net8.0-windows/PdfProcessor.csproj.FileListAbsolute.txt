@@ -154,3 +154,9 @@ C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\System.Security.Cryptog
 C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 E:\GitHub\pdf-processor\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 E:\GitHub\pdf-processor\obj\Debug\net8.0-windows\PdfProcessor_MarkupCompile.lref
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arial.ttf
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arialbd.ttf
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arialbi.ttf
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\ariali.ttf
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
+E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Package.dll
