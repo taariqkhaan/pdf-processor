@@ -10,6 +10,7 @@
         "dependencies": {
           "Microsoft-WindowsAPICodePack-Shell": "1.1.5",
           "PDFsharp": "6.2.0-preview-3",
+          "PdfPig": "0.1.10-alpha-20250209-1660c",
           "System.Data.SQLite": "1.0.119",
           "UglyToad.PdfPig": "1.7.0-custom-5"
         },
@@ -129,6 +130,38 @@
       "Microsoft.Win32.SystemEvents/4.7.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "3.1.0"
+        }
+      },
+      "PdfPig/0.1.10-alpha-20250209-1660c": {
+        "runtime": {
+          "lib/net8.0/UglyToad.PdfPig.Core.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.DocumentLayoutAnalysis.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Fonts.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Package.dll": {
+            "assemblyVersion": "0.1.8.0",
+            "fileVersion": "0.1.8.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokenization.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.Tokens.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          },
+          "lib/net8.0/UglyToad.PdfPig.dll": {
+            "assemblyVersion": "0.1.10.0",
+            "fileVersion": "0.1.10.0"
+          }
         }
       },
       "PDFsharp/6.2.0-preview-3": {
@@ -343,56 +376,25 @@
           "UglyToad.PdfPig.Fonts": "1.7.0-custom-5",
           "UglyToad.PdfPig.Tokenization": "1.7.0-custom-5",
           "UglyToad.PdfPig.Tokens": "1.7.0-custom-5"
-        },
-        "runtime": {
-          "lib/net6.0/UglyToad.PdfPig.dll": {
-            "assemblyVersion": "0.1.8.0",
-            "fileVersion": "0.1.8.0"
-          }
         }
       },
-      "UglyToad.PdfPig.Core/1.7.0-custom-5": {
-        "runtime": {
-          "lib/net6.0/UglyToad.PdfPig.Core.dll": {
-            "assemblyVersion": "0.1.8.0",
-            "fileVersion": "0.1.8.0"
-          }
-        }
-      },
+      "UglyToad.PdfPig.Core/1.7.0-custom-5": {},
       "UglyToad.PdfPig.Fonts/1.7.0-custom-5": {
         "dependencies": {
           "UglyToad.PdfPig.Core": "1.7.0-custom-5",
           "UglyToad.PdfPig.Tokenization": "1.7.0-custom-5",
           "UglyToad.PdfPig.Tokens": "1.7.0-custom-5"
-        },
-        "runtime": {
-          "lib/net6.0/UglyToad.PdfPig.Fonts.dll": {
-            "assemblyVersion": "0.1.8.0",
-            "fileVersion": "0.1.8.0"
-          }
         }
       },
       "UglyToad.PdfPig.Tokenization/1.7.0-custom-5": {
         "dependencies": {
           "UglyToad.PdfPig.Core": "1.7.0-custom-5",
           "UglyToad.PdfPig.Tokens": "1.7.0-custom-5"
-        },
-        "runtime": {
-          "lib/net6.0/UglyToad.PdfPig.Tokenization.dll": {
-            "assemblyVersion": "0.1.8.0",
-            "fileVersion": "0.1.8.0"
-          }
         }
       },
       "UglyToad.PdfPig.Tokens/1.7.0-custom-5": {
         "dependencies": {
           "UglyToad.PdfPig.Core": "1.7.0-custom-5"
-        },
-        "runtime": {
-          "lib/net6.0/UglyToad.PdfPig.Tokens.dll": {
-            "assemblyVersion": "0.1.8.0",
-            "fileVersion": "0.1.8.0"
-          }
         }
       }
     }
@@ -493,6 +495,13 @@
       "sha512": "sha512-mtVirZr++rq+XCDITMUdnETD59XoeMxSpLRIII7JRI6Yj0LEDiO1pPn0ktlnIj12Ix8bfvQqQDMMIF9wC98oCA==",
       "path": "microsoft.win32.systemevents/4.7.0",
       "hashPath": "microsoft.win32.systemevents.4.7.0.nupkg.sha512"
+    },
+    "PdfPig/0.1.10-alpha-20250209-1660c": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-k7gPjKY9d9ruhTxXT0DgAM6cgLGtHgV92yvb4j5dHuPLLzWIH0TFyKfZFeDAzu28XNHKunamDWYRy6fT9VeOVQ==",
+      "path": "pdfpig/0.1.10-alpha-20250209-1660c",
+      "hashPath": "pdfpig.0.1.10-alpha-20250209-1660c.nupkg.sha512"
     },
     "PDFsharp/6.2.0-preview-3": {
       "type": "package",

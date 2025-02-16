@@ -18,6 +18,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
+      <PackageReference Include="PdfPig" Version="0.1.10-alpha-20250209-1660c" />
       <PackageReference Include="PDFsharp" Version="6.2.0-preview-3" />
       <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
       <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
@@ -29,6 +30,24 @@
             <XamlRuntime>Wpf</XamlRuntime>
             <SubType>Designer</SubType>
         </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Resources\arial.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\Fonts\arial.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\Fonts\arialbd.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\Fonts\arialbi.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\Fonts\ariali.ttf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

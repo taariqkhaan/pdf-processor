@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "qf1Lei4GG88=",
+  "dgSpecHash": "mZ5o3Njz8t8=",
   "success": true,
   "projectFilePath": "E:\\GitHub\\pdf-processor\\PdfProcessor.csproj",
   "expectedPackageFiles": [
@@ -17,6 +17,7 @@
     "C:\\Users\\Tariq\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
     "C:\\Users\\Tariq\\.nuget\\packages\\microsoft.win32.registry\\4.7.0\\microsoft.win32.registry.4.7.0.nupkg.sha512",
     "C:\\Users\\Tariq\\.nuget\\packages\\microsoft.win32.systemevents\\4.7.0\\microsoft.win32.systemevents.4.7.0.nupkg.sha512",
+    "C:\\Users\\Tariq\\.nuget\\packages\\pdfpig\\0.1.10-alpha-20250209-1660c\\pdfpig.0.1.10-alpha-20250209-1660c.nupkg.sha512",
     "C:\\Users\\Tariq\\.nuget\\packages\\pdfsharp\\6.2.0-preview-3\\pdfsharp.6.2.0-preview-3.nupkg.sha512",
     "C:\\Users\\Tariq\\.nuget\\packages\\runtime.native.system.data.sqlclient.sni\\4.7.0\\runtime.native.system.data.sqlclient.sni.4.7.0.nupkg.sha512",
     "C:\\Users\\Tariq\\.nuget\\packages\\runtime.win-arm64.runtime.native.system.data.sqlclient.sni\\4.4.0\\runtime.win-arm64.runtime.native.system.data.sqlclient.sni.4.4.0.nupkg.sha512",

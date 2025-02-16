@@ -58,6 +58,10 @@
               "target": "Package",
               "version": "[6.2.0-preview-3, )"
             },
+            "PdfPig": {
+              "target": "Package",
+              "version": "[0.1.10-alpha-20250209-1660c, )"
+            },
             "System.Data.SQLite": {
               "target": "Package",
               "version": "[1.0.119, )"

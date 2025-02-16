@@ -8,12 +8,6 @@ namespace PdfProcessor.Services
 {
     public class PdfTextService
     {
-        private readonly PdfRegionService _pdfRegionService;
-        
-        public PdfTextService(PdfRegionService pdfRegionService)
-        {
-            _pdfRegionService = pdfRegionService;
-        }
         public List<PdfTextModel> ExtractTextAndCoordinates(string pdfPath)
         {
             
@@ -25,25 +19,18 @@ namespace PdfProcessor.Services
                 
                 foreach (Page page in document.GetPages())
                 {
-                    PdfRectangle regionRect = _pdfRegionService.GetBowRegion(page.Width, page.Height, page.Rotation.Value);
-                    extractedText.AddRange(ExtractTextFromPage(page, regionRect, page.Rotation.Value, pageNumber));
-                    
+                    extractedText.AddRange(ExtractTextFromPage(page, page.Rotation.Value, pageNumber));
                     pageNumber++;
                 }
             }
             return extractedText;
         }
-        private List<PdfTextModel> ExtractTextFromPage(Page page, PdfRectangle region, int rotation, int pageNumber)
+        private List<PdfTextModel> ExtractTextFromPage(Page page, int rotation, int pageNumber)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
             List<Word> words = page.GetWords().ToList();
-            
-            double regionX1 = region.BottomLeft.X;
-            double regionY1 = region.BottomLeft.Y;
-            double regionX2 = region.TopRight.X;
-            double regionY2 = region.TopRight.Y;
+
             double? dateY1 = null;
-            
             bool dateFoundOnPage = false;
 
             // First pass: Check if "DATE:" exists on the page
@@ -71,33 +58,60 @@ namespace PdfProcessor.Services
                     double wordY2 = lastChar.GlyphRectangle.TopRight.Y;
                     
                     // Smaller characters like . or * can have smaller Y2 value
-                    if (Math.Abs(wordY1 - wordY2) < 5)
+                    if (Math.Abs(wordY1 - wordY2) < 5 )
                     {
-                        wordY2 = wordY1 + 5.77;
-                    }
-                    
-                    int textRotation = 0; // Detect text rotation
-                    
-                    if (wordX1 >= regionX1 && wordY1 >= regionY1 && wordX2 <= regionX2 && wordY2 <= regionY2)
-                    {
-                        if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
+                        if (word.Text.Contains("\"") || word.Text.Contains("'"))
                         {
-                            continue; // Skip words with similar Y1 values
+                            wordY1 = wordY2 - 5.77;
                         }
-                        
-                        textModels.Add(new PdfTextModel(
-                            word.Text,
-                            wordX1,
-                            wordY1,
-                            wordX2,
-                            wordY2,
-                            textRotation,
-                            pageNumber
-                        ));
+                        else
+                        {
+                            wordY2 = wordY1 + 5.77;
+                        }
                     }
+                    
+                    int textRotation = DetermineWordRotation(word);
+                    
+                    if (dateY1.HasValue && Math.Abs(wordY1 - dateY1.Value) < 2)
+                    {
+                        continue; // Skip words with similar Y1 values
+                    }
+
+                    textModels.Add(new PdfTextModel(
+                        word.Text,
+                        wordX1,
+                        wordY1,
+                        wordX2,
+                        wordY2,
+                        textRotation,
+                        pageNumber
+                    ));
+                    
                 }
             }
             return textModels;
         }
+        
+        private int DetermineWordRotation(Word word)
+        {
+            // Get the first and last letters' center positions 
+            // (or use BottomLeft, TopRight, etc. as you prefer).
+            Letter firstLetter = word.Letters.First();
+            Letter lastLetter  = word.Letters.Last();
+
+            // Compute a simple vector from the first letter to the last letter.
+            double deltaX = lastLetter.GlyphRectangle.BottomLeft.X - firstLetter.GlyphRectangle.BottomLeft.X;
+            double deltaY = lastLetter.GlyphRectangle.BottomLeft.Y - firstLetter.GlyphRectangle.BottomLeft.Y;
+
+            // Decide if the word is predominantly horizontal or vertical
+            if (Math.Abs(deltaX) >= Math.Abs(deltaY))
+            {
+                return (deltaX >= 0) ? 0 : 180;
+            }
+            
+            return (deltaY >= 0) ? 90 : 270;
+            
+        }
+
     }
 } 
