@@ -19,14 +19,15 @@ namespace PdfProcessor.Services
         private double bottomLeftY;
         
         private readonly PdfRegionService _regionService;
-
         public DrawingService()
         {
             _regionService = new PdfRegionService();
         }
-
         public List<PdfTextModel> ExtractText(string pdfPath)
         {
+            string wordTag = "NA";
+            int itemNumber = 0;
+            
             List<PdfTextModel> extractedTextData = new List<PdfTextModel>();
 
             // Open the PDF
@@ -40,9 +41,11 @@ namespace PdfProcessor.Services
                     double pageWidth = page.Width;
                     double pageHeight = page.Height;
                     int pageRotation = page.Rotation.Value;
+                    double x1_min = 0;
+                    double y1_max = 0;
 
                     // Get the search region for this page
-                    PdfRectangle searchRegion = _regionService.GetDwgRegion(pageWidth, pageHeight, pageRotation);
+                    PdfRectangle searchRegion = _regionService.GetDwgTitleRegion(pageWidth, pageHeight, pageRotation, x1_min, y1_max, pageIndex);
 
                     var words = page.GetWords(DefaultWordExtractor.Instance);
 
@@ -72,157 +75,19 @@ namespace PdfProcessor.Services
                         double yDiff = bottomLeft.Y - topRight.Y;
                         double xDiffAbs = Math.Abs(xDiff);
                         double yDiffAbs = Math.Abs(yDiff);
-
-
-                        // Determine text rotation
-                        if (word.Text.Length > 1)
-                        {
-                            if (xDiffAbs > yDiffAbs)
-                            {
-                                if (xDiff < 0)
-                                {
-                                    wordRotation = 0;
-                                }
-                                else if (xDiff > 0)
-                                {
-                                    wordRotation = 180;
-                                }
-
-                            }
-                            else
-                            {
-                                if (yDiff < 0)
-                                {
-                                    wordRotation = 270;
-                                }
-                                else if (yDiff > 0)
-                                {
-                                    wordRotation = 90;
-                                }
-                            }
-
-                        }
-                        else
-                        {
-                            if (xDiffAbs > yDiffAbs)
-                            {
-                                if (yDiff < 0)
-                                {
-                                    wordRotation = 270;
-                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
-                                    {
-                                        wordRotation = 0;
-                                    }
-                                }
-                                else if (yDiff > 0)
-                                {
-                                    wordRotation = 90;
-                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
-                                    {
-                                        wordRotation = 180;
-                                    }
-                                }
-
-                            }
-                            else
-                            {
-                                if (yDiff < 0)
-                                {
-                                    wordRotation = 0;
-                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
-                                    {
-                                        wordRotation = 270;
-                                    }
-                                }
-                                else if (yDiff > 0)
-                                {
-                                    wordRotation = 180;
-                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
-                                    {
-                                        wordRotation = 90;
-                                    }
-                                }
-                            }
-                        }
-
-                        // Adjust coordinates based on rotation
-                        switch (wordRotation)
-                        {
-                            case 0:
-                                if (".,_".Contains(lastLetter.Value))
-                                    topRightY += 9;
-        
-                                if ("-+=".Contains(firstLetter.Value))
-                                    bottomLeftY -= 2.5;
-        
-                                if ("-+=".Contains(lastLetter.Value))
-                                    topRightY += 4;
-        
-                                if ("'\"".Contains(firstLetter.Value))
-                                    bottomLeftY -= 5;
-                                break;
-
-                            case 90:
-                                topRightY -= 4;
-                                bottomLeftY += 4;
-
-                                if (".,_".Contains(lastLetter.Value))
-                                    topRightX += 9;
-        
-                                if ("-+=".Contains(firstLetter.Value))
-                                    bottomLeftX -= 2.5;
-        
-                                if ("-+=".Contains(lastLetter.Value))
-                                    topRightX += 4;
-        
-                                if ("'\"".Contains(firstLetter.Value))
-                                    bottomLeftX -= 5;
-                                break;
-
-                            case 180:
-                                (bottomLeftX, topRightX) = (topRightX, bottomLeftX);
-                                (bottomLeftY, topRightY) = (topRightY, bottomLeftY);
-
-                                if (".,_".Contains(lastLetter.Value))
-                                    bottomLeftY -= 9;
-        
-                                if ("-+=".Contains(firstLetter.Value))
-                                    topRightY += 4;
-        
-                                if ("-+=".Contains(lastLetter.Value))
-                                    bottomLeftY -= 5;
-        
-                                if ("'\"".Contains(firstLetter.Value))
-                                    topRightY += 4;
-                                break;
-
-                            case 270:
-                                bottomLeftX += 5;
-                                topRightX -= 5;
-
-                                if (".,_".Contains(firstLetter.Value))
-                                    bottomLeftX += 2;
-        
-                                if (".,_".Contains(lastLetter.Value))
-                                    topRightX -= 12;
-        
-                                if ("-+=".Contains(lastLetter.Value))
-                                    topRightX -= 7;
-        
-                                if ("'\"".Contains(firstLetter.Value))
-                                    bottomLeftX += 10;
-                                break;
-                        }
                         
-
+                        
                         extractedTextData.Add(new PdfTextModel(
                             word.Text,
                             bottomLeftX,
                             bottomLeftY,
                             topRightX,
                             topRightY,
+                            pageIndex,
+                            pageRotation,
                             wordRotation,
-                            pageIndex
+                            wordTag,
+                            itemNumber
                         ));
                     }
                     pageIndex++;
@@ -236,6 +101,6 @@ namespace PdfProcessor.Services
             return wordX1 >= region.Left && wordX2 <= region.Right &&
                    wordY1 >= region.Bottom && wordY2 <= region.Top;
         }
-        
+
     }
 }

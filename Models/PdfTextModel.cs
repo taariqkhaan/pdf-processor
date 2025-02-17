@@ -2,22 +2,37 @@
 
 public class PdfTextModel
 {
-    public string Text { get; set; }
+    public string PageWord { get; set; }
     public double BottomLeftX { get; set; }
     public double BottomLeftY { get; set; }
     public double TopRightX { get; set; }
     public double TopRightY { get; set; }
-    public int Rotation { get; set; }
     public int PageNumber { get; set; }
+    public int PageRotation { get; set; }
+    public int WordRotation { get; set; }
+    public string WordTag { get; set; }
+    public int ItemNumber { get; set; }
 
-    public PdfTextModel(string text, double bottomLeftX, double bottomLeftY, double topRightX, double topRightY, int rotation, int pageNumber)
+    public PdfTextModel(string pageWord, 
+        double bottomLeftX, 
+        double bottomLeftY, 
+        double topRightX, 
+        double topRightY, 
+        int pageNumber, 
+        int pageRotation, 
+        int wordRotation,
+        string wordTag, 
+        int itemNumber)
     {
-        Text = text;
+        PageWord = pageWord;
         BottomLeftX = bottomLeftX;
         BottomLeftY = bottomLeftY;
         TopRightX = topRightX;
         TopRightY = topRightY;
-        Rotation = rotation;
         PageNumber = pageNumber;
+        PageRotation = pageRotation;
+        WordRotation = wordRotation;
+        WordTag = wordTag;
+        ItemNumber = itemNumber;
     }
 }

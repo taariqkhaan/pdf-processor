@@ -11,22 +11,31 @@ namespace PdfProcessor.Services
     {
         public void SaveToCsv(List<PdfTextModel> extractedText, string outputCsvPath)
         {
-            StringBuilder csvContent = new StringBuilder();
-            csvContent.AppendLine("Text,BottomLeftX,BottomLeftY,TopRightX,TopRightY,TextRotation,SheetNumber");
-
-            foreach (var item in extractedText.Where(t => !string.IsNullOrWhiteSpace(t.Text)))
+            if (extractedText == null || extractedText.Count == 0)
             {
-                csvContent.AppendLine($"\"{item.Text.Replace("\"", "\"\"")}\"," +
-                                      $"{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)}," +
-                                      $"{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)}," +
-                                      $"{item.TopRightX.ToString(CultureInfo.InvariantCulture)}," +
-                                      $"{item.TopRightY.ToString(CultureInfo.InvariantCulture)}," +
-                                      $"{item.Rotation.ToString(CultureInfo.InvariantCulture)}," +
-                                      $"{item.PageNumber.ToString(CultureInfo.InvariantCulture)}");
+                throw new ArgumentException("Extracted text list is null or empty.", nameof(extractedText));
             }
-            File.WriteAllText(outputCsvPath, csvContent.ToString());
+
+            using (StreamWriter writer = new StreamWriter(outputCsvPath, false, Encoding.UTF8))
+            {
+                writer.WriteLine("Word,X1,Y1,X2,Y2,Sheet,PageRotation,WordRotation,Tag,Item");
+
+                foreach (var item in extractedText.Where(t => !string.IsNullOrWhiteSpace(t.PageWord)))
+                {
+                    writer.WriteLine($"\"{item.PageWord.Replace("\"", "\"\"")}\"," +
+                                     $"{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.TopRightX.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.TopRightY.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.PageNumber.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.PageRotation.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.WordRotation.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.WordTag.ToString(CultureInfo.InvariantCulture)}," +
+                                     $"{item.ItemNumber.ToString(CultureInfo.InvariantCulture)}");
+                }
+            }
         }
-        
+
         public void SaveToDatabase(List<PdfTextModel> extractedData, string databasePath)
         {
             string connectionString = $"Data Source={databasePath};Version=3;";
@@ -39,13 +48,16 @@ namespace PdfProcessor.Services
                 string createTableQuery = @"
                 CREATE TABLE IF NOT EXISTS pdf_table (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Text TEXT NOT NULL,
+                    Word TEXT NOT NULL,
                     X1 REAL NOT NULL,
                     Y1 REAL NOT NULL,
                     X2 REAL NOT NULL,
                     Y2 REAL NOT NULL,
-                    TextRotation INTEGER NOT NULL,
-                    SheetNumber INTEGER NOT NULL
+                    Sheet INTEGER NOT NULL,
+                    PageRotation INTEGER NOT NULL,
+                    WordRotation INTEGER NOT NULL,
+                    Tag TEXT NOT NULL,
+                    Item INTEGER NOT NULL                 
                 );";
 
                 using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))
@@ -54,41 +66,68 @@ namespace PdfProcessor.Services
                 }
 
                 // Insert extracted text and coordinates into the database
-                string insertQuery = "INSERT INTO pdf_table (Text, X1, Y1, X2, Y2, TextRotation, SheetNumber) VALUES (@Text, @BottomLeftX, @BottomLeftY, @TopRightX, @TopRightY, @Rotation, @PageNumber);";
+                string insertQuery = @"INSERT INTO pdf_table 
+                                                   (Word, 
+                                                    X1, 
+                                                    Y1, 
+                                                    X2, 
+                                                    Y2,
+                                                    Sheet,
+                                                    PageRotation,
+                                                    WordRotation,
+                                                    Tag,
+                                                    Item
+                                                    ) 
+                                        VALUES (@PageWord, 
+                                                @BottomLeftX, 
+                                                @BottomLeftY, 
+                                                @TopRightX, 
+                                                @TopRightY,
+                                                @PageNumber,
+                                                @PageRotation,
+                                                @WordRotation,
+                                                @WordTag,
+                                                @ItemNumber
+                                                );";
 
                 using (SQLiteTransaction transaction = connection.BeginTransaction())
                 using (SQLiteCommand command = new SQLiteCommand(insertQuery, connection))
                 {
-                    command.Parameters.Add(new SQLiteParameter("@Text"));
+                    command.Parameters.Add(new SQLiteParameter("@PageWord"));
                     command.Parameters.Add(new SQLiteParameter("@BottomLeftX"));
                     command.Parameters.Add(new SQLiteParameter("@BottomLeftY"));
                     command.Parameters.Add(new SQLiteParameter("@TopRightX"));
                     command.Parameters.Add(new SQLiteParameter("@TopRightY"));
-                    command.Parameters.Add(new SQLiteParameter("@Rotation"));
                     command.Parameters.Add(new SQLiteParameter("@PageNumber"));
+                    command.Parameters.Add(new SQLiteParameter("@PageRotation"));
+                    command.Parameters.Add(new SQLiteParameter("@WordRotation"));
+                    command.Parameters.Add(new SQLiteParameter("@WordTag"));
+                    command.Parameters.Add(new SQLiteParameter("@ItemNumber"));
 
                     foreach (var data in extractedData)
                     {
-                        command.Parameters["@Text"].Value = data.Text;
+                        command.Parameters["@PageWord"].Value = data.PageWord;
                         command.Parameters["@BottomLeftX"].Value = data.BottomLeftX;
                         command.Parameters["@BottomLeftY"].Value = data.BottomLeftY;
                         command.Parameters["@TopRightX"].Value = data.TopRightX;
                         command.Parameters["@TopRightY"].Value = data.TopRightY;
-                        command.Parameters["@Rotation"].Value = data.Rotation;
                         command.Parameters["@PageNumber"].Value = data.PageNumber;
+                        command.Parameters["@PageRotation"].Value = data.PageRotation;
+                        command.Parameters["@WordRotation"].Value = data.WordRotation;
+                        command.Parameters["@WordTag"].Value = data.WordTag;
+                        command.Parameters["@ItemNumber"].Value = data.ItemNumber;
                         command.ExecuteNonQuery();
                     }
 
                     transaction.Commit();
                 }
                 
-                var deleteQuery = "DELETE FROM pdf_table WHERE Text IS NULL OR TRIM(Text) = '';";
-                using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, connection))
-                {
-                    cmd.ExecuteNonQuery();
-                }
+                // var deleteQuery = "DELETE FROM pdf_table WHERE Text IS NULL OR TRIM(Text) = '';";
+                // using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, connection))
+                // {
+                //     cmd.ExecuteNonQuery();
+                // }
             }
         }
     }
 }
-

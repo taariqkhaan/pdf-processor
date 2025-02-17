@@ -160,3 +160,11 @@ E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arialbi.ttf
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\ariali.ttf
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Package.dll
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arial.ttf
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arialbd.ttf
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\arialbi.ttf
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\Resources\Fonts\ariali.ttf
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\UglyToad.PdfPig.Package.dll
+C:\DOTNETPROJECTS\pdf-processor\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\DOTNETPROJECTS\pdf-processor\obj\Debug\net8.0-windows\PdfProcessor_MarkupCompile.lref

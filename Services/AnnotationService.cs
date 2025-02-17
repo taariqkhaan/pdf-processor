@@ -8,7 +8,7 @@ using PdfSharp.Drawing;
 
 namespace PdfProcessor.Services;
 
-public class DrawingAnnotationService
+public class AnnotationService
 {
     public void AnnotatePdf(string pdfPath, string outputFolder)
     {
@@ -35,21 +35,26 @@ public class DrawingAnnotationService
         connection.Open();
         
         string query = @"
-                SELECT SheetNumber, X1, Y1, X2, Y2, Text
+                SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation
                 FROM pdf_table
-                ORDER BY SheetNumber ASC";
+                ORDER BY Sheet ASC";
 
         using SQLiteCommand command = new(query, connection);
         using SQLiteDataReader reader = command.ExecuteReader();
         
         while (reader.Read())
         {
-            int pageIndex = reader.GetInt32(0) - 1; // Convert 1-based index to 0-based
-            double x1 = reader.GetDouble(1);
-            double y1 = reader.GetDouble(2);
-            double x2 = reader.GetDouble(3);
-            double y2 = reader.GetDouble(4);
-            string textValue = reader.IsDBNull(5) ? string.Empty : reader.GetString(5).Trim();
+            string textValue = reader.IsDBNull(0) ? string.Empty : reader.GetString(0).Trim();
+            double real_x1 = reader.GetDouble(1);
+            double real_y1 = reader.GetDouble(2);
+            double real_x2 = reader.GetDouble(3);
+            double real_y2 = reader.GetDouble(4);
+            int pageIndex = reader.GetInt32(5) - 1;
+            int wordRotation = reader.GetInt32(6);
+
+            (double x1, double y1, double x2, double y2) = AdjustCoordinates(wordRotation, 
+                textValue, real_x1, real_y1, real_x2, real_y2);
+            
 
             if (pageIndex >= 0 && pageIndex < document.Pages.Count)
             {
@@ -104,4 +109,87 @@ public class DrawingAnnotationService
         document.Save(outputPdfPath);
         Console.WriteLine($"Annotated PDF saved at: {outputPdfPath}");
     }
+    
+    // Adjusts coordinates from PDFpig to work with PDFSharp based on text rotation
+    private (double, double, double, double) AdjustCoordinates(int wordRotation, 
+        string textValue, double real_x1, double real_y1, double real_x2, double real_y2)
+    {
+        char firstChar = textValue[0];
+        char lastChar = textValue[^1];
+        double bottomLeftX = real_x1;
+        double bottomLeftY = real_y1;
+        double topRightX = real_x2;
+        double topRightY = real_y2;
+
+        switch (wordRotation)
+        {
+            case 0:
+                if (".,_".Contains(lastChar))
+                    topRightY += 9;
+
+                if ("-+=".Contains(firstChar))
+                    bottomLeftY -= 2.5;
+
+                if ("-+=".Contains(lastChar))
+                    topRightY += 4;
+
+                if ("`'\"".Contains(firstChar))
+                    bottomLeftY -= 5;
+                break;
+
+            case 90:
+                topRightY -= 4;
+                bottomLeftY += 4;
+
+                if (".,_".Contains(lastChar))
+                    topRightX += 9;
+
+                if ("-+=".Contains(firstChar))
+                    bottomLeftX -= 2.5;
+
+                if ("-+=".Contains(lastChar))
+                    topRightX += 4;
+
+                if ("`'\"".Contains(firstChar))
+                    bottomLeftX -= 5;
+                break;
+
+            case 180:
+                (bottomLeftX, topRightX) = (topRightX, bottomLeftX);
+                (bottomLeftY, topRightY) = (topRightY, bottomLeftY);
+
+                if (".,_".Contains(lastChar))
+                    bottomLeftY -= 9;
+
+                if ("-+=".Contains(firstChar))
+                    topRightY += 4;
+
+                if ("-+=".Contains(lastChar))
+                    bottomLeftY -= 5;
+
+                if ("`'\"".Contains(firstChar))
+                    topRightY += 4;
+                break;
+
+            case 270:
+                bottomLeftX += 5;
+                topRightX -= 5;
+
+                if (".,_".Contains(firstChar))
+                    bottomLeftX += 2;
+
+                if (".,_".Contains(lastChar))
+                    topRightX -= 12;
+
+                if ("-+=".Contains(lastChar))
+                    topRightX -= 7;
+
+                if ("`'\"".Contains(firstChar))
+                    bottomLeftX += 10;
+                break;
+        }
+
+        return (bottomLeftX, bottomLeftY, topRightX, topRightY);
+    }
+
 }

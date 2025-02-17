@@ -24,7 +24,6 @@ namespace PdfProcessor.Services
                 using (var connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
                 {
                     connection.Open();
-                    EnsureColumnsExist(connection);
                     UpdateRowsBasedOnConditions(connection);
                     DeleteNullRows(connection);
                 }
@@ -35,66 +34,13 @@ namespace PdfProcessor.Services
             }
         }
 
-        private void EnsureColumnsExist(SQLiteConnection connection)
-        {
-            using (var cmd = new SQLiteCommand("PRAGMA table_info(pdf_table);", connection))
-            using (var reader = cmd.ExecuteReader())
-            {
-                bool typeColumnExists = false;
-                bool itemNumberColumnExists = false;
-
-                while (reader.Read())
-                {
-                    string columnName = reader[1].ToString();
-                    if (columnName.Equals("Type", StringComparison.OrdinalIgnoreCase))
-                        typeColumnExists = true;
-                    if (columnName.Equals("ItemNumber", StringComparison.OrdinalIgnoreCase))
-                        itemNumberColumnExists = true;
-                }
-
-                if (!typeColumnExists)
-                {
-                    using (var alterCmd = new SQLiteCommand("ALTER TABLE pdf_table ADD COLUMN Type TEXT;", connection))
-                    {
-                        alterCmd.ExecuteNonQuery();
-                    }
-                }
-
-                if (!itemNumberColumnExists)
-                {
-                    using (var alterCmd =
-                           new SQLiteCommand("ALTER TABLE pdf_table ADD COLUMN ItemNumber TEXT;", connection))
-                    {
-                        alterCmd.ExecuteNonQuery();
-                    }
-                }
-            }
-        }
-
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
-            string selectQuery = "SELECT rowid, X1, Y1, SheetNumber, Text FROM pdf_table ORDER BY SheetNumber, Y1 DESC;";
-
-            var sheetX1Min = new Dictionary<int, double>();
-            var sheetY1Max = new Dictionary<int, double>();
-
-            // First pass: Determine the lowest X1 and highest Y1 for each sheet
-            using (var cmd = new SQLiteCommand(selectQuery, connection))
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
-                    double x1 = reader.IsDBNull(1) ? double.MaxValue : reader.GetDouble(1);
-                    double y1 = reader.IsDBNull(2) ? double.MinValue : reader.GetDouble(2);
-
-                    if (!sheetX1Min.ContainsKey(sheetNumber) || x1 < sheetX1Min[sheetNumber])
-                        sheetX1Min[sheetNumber] = x1;
-
-                    if (!sheetY1Max.ContainsKey(sheetNumber) || y1 > sheetY1Max[sheetNumber])
-                        sheetY1Max[sheetNumber] = y1;
-                }
-            }
+            string selectQuery = @"
+                SELECT X1, Y1, Sheet, Word,
+                FROM pdf_table
+                ORDER BY Sheet, Y1 DESC;";
+            
 
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
@@ -104,6 +50,8 @@ namespace PdfProcessor.Services
                 
                 double y1_current = 0;
                 double x1_current = 0;
+                double maxX1 = 0;
+                double maxY1 = 0;
                 bool y1_current_set = false;
                 
                 // This set will track all unique “Type” entries for the current ItemNumber
@@ -112,10 +60,10 @@ namespace PdfProcessor.Services
                 using (var transaction = connection.BeginTransaction())
                 using (var updateCmd =
                        new SQLiteCommand(
-                           "UPDATE pdf_table SET Type = @Type, ItemNumber = @ItemNumber WHERE rowid = @RowId;",
+                           "UPDATE pdf_table SET Tag = @WordTag, Item = @ItemNumber WHERE rowid = @RowId;",
                            connection, transaction))
                 {
-                    updateCmd.Parameters.Add(new SQLiteParameter("@Type"));
+                    updateCmd.Parameters.Add(new SQLiteParameter("@WordTag"));
                     updateCmd.Parameters.Add(new SQLiteParameter("@ItemNumber"));
                     updateCmd.Parameters.Add(new SQLiteParameter("@RowId"));
 
@@ -125,6 +73,8 @@ namespace PdfProcessor.Services
                         double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
                         double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
                         int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                        maxX1 = reader.IsDBNull(4) ? 0 : reader.GetDouble(4);
+                        maxY1 = reader.IsDBNull(5) ? 0 : reader.GetDouble(5);
 
                         if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
                         {
@@ -135,9 +85,9 @@ namespace PdfProcessor.Services
                                 MissingTag(connection, currentItemTags, lastSheetNumber, currentItemNumber, x1_current, y1_current);
                                 currentItemTags.Clear();
                             }
-                            
-                            x1_current = sheetX1Min[sheetNumber];
-                            y1_current = sheetY1Max[sheetNumber] - 75;
+
+                            x1_current = 24; //sheetX1Min[sheetNumber];
+                            y1_current = 200; //sheetY1Max[sheetNumber] - 75;
                             currentItemNumber = 1;
                             lastSheetNumber = sheetNumber;
                             y1_current_set = false;
@@ -172,7 +122,7 @@ namespace PdfProcessor.Services
 
                         if (!string.IsNullOrEmpty(tag))
                         {
-                            updateCmd.Parameters["@Type"].Value = tag;
+                            updateCmd.Parameters["@WordTag"].Value = tag;
                             updateCmd.Parameters["@ItemNumber"].Value = currentItemNumber;
                             updateCmd.Parameters["@RowId"].Value = rowId;
                             updateCmd.ExecuteNonQuery();

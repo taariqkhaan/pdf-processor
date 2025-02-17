@@ -8,7 +8,7 @@ using PdfSharp.Drawing;
 
 namespace PdfProcessor.Services
 {
-    public class AnnotatePdfService
+    public class AnnotatepdfService
     {
         public void AnnotatePdf(string pdfPath, string outputFolder)
         {

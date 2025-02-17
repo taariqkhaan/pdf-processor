@@ -16,6 +16,8 @@ namespace PdfProcessor.ViewModels
         
         private string _allFilePath;
         private string _outputFolderPath;
+        private readonly PdfTextService _pdfTextService;
+        private string searchRegionType;
         private Stopwatch stopwatch;
         
         public bool IsEnabled
@@ -83,24 +85,22 @@ namespace PdfProcessor.ViewModels
 
             await Task.Run(() =>
             {
-                // Highlight a section 
-                // var pdfHighlightService = new PdfHighlightService();
-                // pdfHighlightService.HighlightPdfRegions(AllFilePath, OutputFolderPath);
 
                 //Extract text
-                // PdfTextService _pdfTextService = new PdfTextService();
-                // stopwatch = Stopwatch.StartNew();
-                // List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath);
-                // stopwatch.Stop();
-                // Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
+                PdfTextService _pdfTextService = new PdfTextService();
+                searchRegionType = "FULL";
+                stopwatch = Stopwatch.StartNew();
+                List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath, searchRegionType);
+                stopwatch.Stop();
+                Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 
                 //Extract text
-                DrawingService drawingService = new DrawingService();
-                stopwatch = Stopwatch.StartNew();
-                List<PdfTextModel> extractedData = drawingService.ExtractText(AllFilePath);
-                stopwatch.Stop();
-                Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
+                // DrawingService drawingService = new DrawingService();
+                // stopwatch = Stopwatch.StartNew();
+                // List<PdfTextModel> extractedData = drawingService.ExtractText(AllFilePath);
+                // stopwatch.Stop();
+                // Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 // // Extract text and save .csv file using python
                 // PdfToTextPython pdfToTextPython = new PdfToTextPython();
@@ -120,7 +120,7 @@ namespace PdfProcessor.ViewModels
                 stopwatch.Stop();
                 Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
                 
-                // Analyze the database for cable schedule 
+                //Analyze the database for cable schedule 
                 // CableScheduleService cableScheduleService = new CableScheduleService();
                 // stopwatch = Stopwatch.StartNew();
                 // cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
@@ -135,9 +135,9 @@ namespace PdfProcessor.ViewModels
                 // Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 // Highlight Drawing 
-                DrawingAnnotationService drawingAnnotationService = new DrawingAnnotationService();
+                AnnotationService annotationService = new AnnotationService();
                 stopwatch = Stopwatch.StartNew();
-                drawingAnnotationService.AnnotatePdf(AllFilePath, OutputFolderPath);
+                annotationService.AnnotatePdf(AllFilePath, OutputFolderPath);
                 stopwatch.Stop();
                 Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
                 
