@@ -14,9 +14,9 @@ namespace PdfProcessor.Services
             StringBuilder csvContent = new StringBuilder();
             csvContent.AppendLine("Text,BottomLeftX,BottomLeftY,TopRightX,TopRightY,TextRotation,SheetNumber");
 
-            foreach (var item in extractedText)
+            foreach (var item in extractedText.Where(t => !string.IsNullOrWhiteSpace(t.Text)))
             {
-                csvContent.AppendLine($"\"{item.Text}\"," +
+                csvContent.AppendLine($"\"{item.Text.Replace("\"", "\"\"")}\"," +
                                       $"{item.BottomLeftX.ToString(CultureInfo.InvariantCulture)}," +
                                       $"{item.BottomLeftY.ToString(CultureInfo.InvariantCulture)}," +
                                       $"{item.TopRightX.ToString(CultureInfo.InvariantCulture)}," +
@@ -80,6 +80,12 @@ namespace PdfProcessor.Services
                     }
 
                     transaction.Commit();
+                }
+                
+                var deleteQuery = "DELETE FROM pdf_table WHERE Text IS NULL OR TRIM(Text) = '';";
+                using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, connection))
+                {
+                    cmd.ExecuteNonQuery();
                 }
             }
         }

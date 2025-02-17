@@ -3,92 +3,239 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Util;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
+using PdfProcessor.Models;
 
 namespace PdfProcessor.Services
 {
     public class DrawingService
     {
-        public void ExtractText(string pdfPath, string outputFolder)
+        private double topRightX;
+        private double topRightY;
+        private double bottomLeftX;
+        private double bottomLeftY;
+        
+        private readonly PdfRegionService _regionService;
+
+        public DrawingService()
         {
-            // Ensure the output folder exists
-            Directory.CreateDirectory(outputFolder);
-            
-            // This CSV file will hold word coordinates
-            string csvPath = Path.Combine(outputFolder, "word_coordinates.csv");
+            _regionService = new PdfRegionService();
+        }
+
+        public List<PdfTextModel> ExtractText(string pdfPath)
+        {
+            List<PdfTextModel> extractedTextData = new List<PdfTextModel>();
 
             // Open the PDF
             using (PdfDocument document = PdfDocument.Open(pdfPath))
             {
-                // Prepare a list to hold CSV lines
-                List<string> csvLines = new List<string>();
-                // Add CSV header
-                csvLines.Add("SheetNumber,Word,BottomLeftX,BottomLeftY,TopRightX,TopRightY");
-
                 int pageIndex = 1;
+                
                 // Iterate over each page in the PDF
                 foreach (var page in document.GetPages())
                 {
-                    // Extract words from the page
-                    var words = page.GetWords(NearestNeighbourWordExtractor.Instance);
+                    double pageWidth = page.Width;
+                    double pageHeight = page.Height;
+                    int pageRotation = page.Rotation.Value;
 
-                    // For each word, get the bounding coordinates
+                    // Get the search region for this page
+                    PdfRectangle searchRegion = _regionService.GetDwgRegion(pageWidth, pageHeight, pageRotation);
+
+                    var words = page.GetWords(DefaultWordExtractor.Instance);
+
                     foreach (var word in words)
                     {
                         var letters = word.Letters;
                         if (letters.Count == 0) continue;
 
-                        // Coordinates of the first character
                         var firstLetter = letters.First();
                         var bottomLeft = firstLetter.GlyphRectangle.BottomLeft;
-
-                        // Coordinates of the last character
+                        var topLeft = firstLetter.GlyphRectangle.TopLeft;
+                        bottomLeftX = bottomLeft.X;
+                        bottomLeftY = bottomLeft.Y;
+                        
                         var lastLetter = letters.Last();
                         var topRight = lastLetter.GlyphRectangle.TopRight;
+                        var bottomRight = lastLetter.GlyphRectangle.BottomRight;
+                        topRightX = topRight.X;
+                        topRightY = topRight.Y;
                         
-                        //Compute rotation:
-                        // If |x1 - x2| < |y1 - y2|, rotation = 90, else = 0
-                        double wordRotation = 0;
+                        // Check if the word falls within the search region
+                        if (!IsWithinRegion(bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y, searchRegion))
+                            continue;
+
+                        int wordRotation = 0;
+                        double xDiff = bottomLeft.X - topRight.X;
+                        double yDiff = bottomLeft.Y - topRight.Y;
+                        double xDiffAbs = Math.Abs(xDiff);
+                        double yDiffAbs = Math.Abs(yDiff);
+
+
+                        // Determine text rotation
                         if (word.Text.Length > 1)
                         {
-                            double xDiff = Math.Abs(bottomLeft.X - topRight.X);
-                            double yDiff = Math.Abs(bottomLeft.Y - topRight.Y);
-                            wordRotation = xDiff < yDiff ? 90 : 0;
+                            if (xDiffAbs > yDiffAbs)
+                            {
+                                if (xDiff < 0)
+                                {
+                                    wordRotation = 0;
+                                }
+                                else if (xDiff > 0)
+                                {
+                                    wordRotation = 180;
+                                }
+
+                            }
+                            else
+                            {
+                                if (yDiff < 0)
+                                {
+                                    wordRotation = 270;
+                                }
+                                else if (yDiff > 0)
+                                {
+                                    wordRotation = 90;
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            if (xDiffAbs > yDiffAbs)
+                            {
+                                if (yDiff < 0)
+                                {
+                                    wordRotation = 270;
+                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
+                                    {
+                                        wordRotation = 0;
+                                    }
+                                }
+                                else if (yDiff > 0)
+                                {
+                                    wordRotation = 90;
+                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
+                                    {
+                                        wordRotation = 180;
+                                    }
+                                }
+
+                            }
+                            else
+                            {
+                                if (yDiff < 0)
+                                {
+                                    wordRotation = 0;
+                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
+                                    {
+                                        wordRotation = 270;
+                                    }
+                                }
+                                else if (yDiff > 0)
+                                {
+                                    wordRotation = 180;
+                                    if ("w".Contains(lastLetter.Value) || "w".Contains(firstLetter.Value))
+                                    {
+                                        wordRotation = 90;
+                                    }
+                                }
+                            }
                         }
 
-                        // Construct a CSV line:
-                        // SheetNumber, Word Text, BottomLeftX, BottomLeftY, TopRightX, TopRightY
-                        // Create CSV line
-                        string line = string.Format(
-                            "{0},\"{1}\",{2},{3},{4},{5},{6}",
-                            pageIndex,
-                            EscapeCsv(word.Text),
-                            bottomLeft.X,
-                            bottomLeft.Y,
-                            topRight.X,
-                            topRight.Y,
-                            wordRotation
-                        );
+                        // Adjust coordinates based on rotation
+                        switch (wordRotation)
+                        {
+                            case 0:
+                                if (".,_".Contains(lastLetter.Value))
+                                    topRightY += 9;
+        
+                                if ("-+=".Contains(firstLetter.Value))
+                                    bottomLeftY -= 2.5;
+        
+                                if ("-+=".Contains(lastLetter.Value))
+                                    topRightY += 4;
+        
+                                if ("'\"".Contains(firstLetter.Value))
+                                    bottomLeftY -= 5;
+                                break;
 
-                        csvLines.Add(line);
+                            case 90:
+                                topRightY -= 4;
+                                bottomLeftY += 4;
+
+                                if (".,_".Contains(lastLetter.Value))
+                                    topRightX += 9;
+        
+                                if ("-+=".Contains(firstLetter.Value))
+                                    bottomLeftX -= 2.5;
+        
+                                if ("-+=".Contains(lastLetter.Value))
+                                    topRightX += 4;
+        
+                                if ("'\"".Contains(firstLetter.Value))
+                                    bottomLeftX -= 5;
+                                break;
+
+                            case 180:
+                                (bottomLeftX, topRightX) = (topRightX, bottomLeftX);
+                                (bottomLeftY, topRightY) = (topRightY, bottomLeftY);
+
+                                if (".,_".Contains(lastLetter.Value))
+                                    bottomLeftY -= 9;
+        
+                                if ("-+=".Contains(firstLetter.Value))
+                                    topRightY += 4;
+        
+                                if ("-+=".Contains(lastLetter.Value))
+                                    bottomLeftY -= 5;
+        
+                                if ("'\"".Contains(firstLetter.Value))
+                                    topRightY += 4;
+                                break;
+
+                            case 270:
+                                bottomLeftX += 5;
+                                topRightX -= 5;
+
+                                if (".,_".Contains(firstLetter.Value))
+                                    bottomLeftX += 2;
+        
+                                if (".,_".Contains(lastLetter.Value))
+                                    topRightX -= 12;
+        
+                                if ("-+=".Contains(lastLetter.Value))
+                                    topRightX -= 7;
+        
+                                if ("'\"".Contains(firstLetter.Value))
+                                    bottomLeftX += 10;
+                                break;
+                        }
+                        
+
+                        extractedTextData.Add(new PdfTextModel(
+                            word.Text,
+                            bottomLeftX,
+                            bottomLeftY,
+                            topRightX,
+                            topRightY,
+                            wordRotation,
+                            pageIndex
+                        ));
                     }
-
                     pageIndex++;
                 }
-
-                // Write all lines to the CSV file
-                File.WriteAllLines(csvPath, csvLines);
             }
+            return extractedTextData;
         }
-
-        /// <summary>
-        /// Simple method to escape quotes for CSV output.
-        /// </summary>
-        private static string EscapeCsv(string text)
+        
+        private bool IsWithinRegion(double wordX1, double wordY1, double wordX2, double wordY2, PdfRectangle region)
         {
-            // Escape quotes by doubling them
-            return text.Replace("\"", "\"\"");
+            return wordX1 >= region.Left && wordX2 <= region.Right &&
+                   wordY1 >= region.Bottom && wordY2 <= region.Top;
         }
+        
     }
 }

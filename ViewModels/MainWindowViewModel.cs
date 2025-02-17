@@ -7,6 +7,7 @@ using PdfProcessor.Models;
 using PdfProcessor.Services;
 
 
+
 namespace PdfProcessor.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
@@ -93,12 +94,13 @@ namespace PdfProcessor.ViewModels
                 // stopwatch.Stop();
                 // Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
                 
+                
                 //Extract text
                 DrawingService drawingService = new DrawingService();
                 stopwatch = Stopwatch.StartNew();
-                drawingService.ExtractText(AllFilePath, OutputFolderPath);
+                List<PdfTextModel> extractedData = drawingService.ExtractText(AllFilePath);
                 stopwatch.Stop();
-                Console.WriteLine($"SaveToCsv Time: {stopwatch.ElapsedMilliseconds} ms");
+                Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 // // Extract text and save .csv file using python
                 // PdfToTextPython pdfToTextPython = new PdfToTextPython();
@@ -107,16 +109,16 @@ namespace PdfProcessor.ViewModels
                 // stopwatch.Stop();
                 // Console.WriteLine($"SaveToCsv using Python Time: {stopwatch.ElapsedMilliseconds} ms");
                 
-                // Save text in .csv and .db format
-                // ExportService exportService = new ExportService();
-                // stopwatch = Stopwatch.StartNew();
-                // exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-                // stopwatch.Stop();
-                // Console.WriteLine($"SaveToCsv Time: {stopwatch.ElapsedMilliseconds} ms");
-                // stopwatch = Stopwatch.StartNew();
-                // exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
-                // stopwatch.Stop();
-                // Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
+                //Save text in .csv and .db format
+                ExportService exportService = new ExportService();
+                stopwatch = Stopwatch.StartNew();
+                exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
+                stopwatch.Stop();
+                Console.WriteLine($"SaveToCsv Time: {stopwatch.ElapsedMilliseconds} ms");
+                stopwatch = Stopwatch.StartNew();
+                exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
+                stopwatch.Stop();
+                Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 // Analyze the database for cable schedule 
                 // CableScheduleService cableScheduleService = new CableScheduleService();
@@ -131,6 +133,13 @@ namespace PdfProcessor.ViewModels
                 // annotatePdfService.AnnotatePdf(AllFilePath, OutputFolderPath);
                 // stopwatch.Stop();
                 // Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
+                
+                // Highlight Drawing 
+                DrawingAnnotationService drawingAnnotationService = new DrawingAnnotationService();
+                stopwatch = Stopwatch.StartNew();
+                drawingAnnotationService.AnnotatePdf(AllFilePath, OutputFolderPath);
+                stopwatch.Stop();
+                Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 
 
