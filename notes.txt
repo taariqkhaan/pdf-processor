@@ -198,7 +198,7 @@ top-right coordinate of last character of the word,
 sheet number to csv in the output folder passed on the parameter.
 
 
-
+'facility_name', 'facility_id', 'dwg_title1','dwg_title2', 'dwg_scale', 'dwg_size', 'dwg_number', 'dwg_sheet', 'dwg_rev', 'dwg_type'
 
 
 

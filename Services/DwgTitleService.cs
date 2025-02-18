@@ -7,7 +7,7 @@ public class DwgTitleService
     {
         private static readonly List<string> RequiredTypes = new()
         {
-            "facility_name", "facility_id", "dwg_title", "dwg_size", "dwg_number", "dwg_sheet",
+            "facility_name", "facility_id", "dwg_title1","dwg_title2", "dwg_scale", "dwg_size", "dwg_number", "dwg_sheet",
             "dwg_rev", "dwg_type"
         };
 
@@ -98,17 +98,14 @@ public class DwgTitleService
 
                         if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
                         {
-                            if (lastSheetNumber != -1)
-                            {
-                                currentItemTags.Clear();
-                            }
-
                             if (sheetBounds.TryGetValue(sheetNumber, out var bounds))
                             {
                                 x1_current = bounds.MinX;
                                 y1_current = bounds.MaxY;
                             }
                             lastSheetNumber = sheetNumber;
+                            
+                            MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
                             currentItemTags.Clear();
                         }
                         
@@ -125,6 +122,7 @@ public class DwgTitleService
                     }
                     if (lastSheetNumber != -1 && currentItemTags.Count > 0)
                     {
+                        MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
                         currentItemTags.Clear();
                     }
                     transaction.Commit();
@@ -136,40 +134,30 @@ public class DwgTitleService
             SQLiteConnection connection,
             HashSet<string> existingTags,
             int sheetNumber,
-            int itemNumber,
             double x1_current,
             double y1_current
         )
         {
-            double line1Y = y1_current;
-            double line2Y = y1_current - 12;
             
-        
             // For convenience, a local function that inserts a row
             void InsertMissingRow(string type, double x1, double y1)
             {
-                double x2 = 0;
-                double y2 = y1 + 5.77; 
-                
                 double width = 0;
                 switch (type)
                 {
-                    // first-line tags
-                    case "cable_tag":      width = 40; break;
-                    case "from_desc":      width = 40; break;
-                    case "to_desc":        width = 40; break;
-                    case "function":       width = 40; break;
-                    case "size":           width = 10; break;
-                    case "insulation":     width = 40; break;
-        
-                    // second-line tags
-                    case "from_ref":       width = 40; break;
-                    case "to_ref":         width = 40; break;
-                    case "voltage":        width = 40; break;
-                    case "conductors":     width = 10; break;
-                    case "length":         width = 10; break;
+                    case "facility_name":    width = 40; break;
+                    case "facility_id":      width = 40; break;
+                    case "dwg_title1":       width = 40; break;
+                    case "dwg_title2":       width = 40; break;
+                    case "dwg_type":         width = 40; break;
+                    case "dwg_scale":        width = 40; break;
+                    case "dwg_size":         width = 40; break;
+                    case "dwg_number":       width = 40; break;
+                    case "dwg_sheet":        width = 40; break;
+                    case "dwg_rev":          width = 40; break;
                 }
-                x2 = x1 + width;
+                double x2 = x1 + width;
+                double y2 = y1 + 5.77;
         
                 // Now insert a new row in pdf_table
                 string insertQuery = @"
@@ -181,7 +169,7 @@ public class DwgTitleService
         
                 using var cmd = new SQLiteCommand(insertQuery, connection);
                 cmd.Parameters.AddWithValue("@sheetNumber", sheetNumber);
-                cmd.Parameters.AddWithValue("@itemNumber", itemNumber);
+                cmd.Parameters.AddWithValue("@itemNumber", 0);
                 cmd.Parameters.AddWithValue("@tag", type);
                 cmd.Parameters.AddWithValue("@x1", x1);
                 cmd.Parameters.AddWithValue("@y1", y1);
@@ -200,41 +188,35 @@ public class DwgTitleService
                 {
                     switch (requiredTag)
                     {
-                        // First line tags
-                        case "cable_tag":
-                            InsertMissingRow("cable_tag", x1_current, line1Y);
+                        case "facility_name":
+                            InsertMissingRow("facility_name", x1_current + 30, y1_current - 16);
                             break;
-                        case "from_desc":
-                            InsertMissingRow("from_desc", x1_current + 110, line1Y);
+                        case "dwg_title1":
+                            InsertMissingRow("dwg_title1", x1_current + 30, y1_current - 30);
                             break;
-                        case "to_desc":
-                            InsertMissingRow("to_desc", x1_current + 247, line1Y);
+                        case "dwg_title2":
+                            InsertMissingRow("dwg_title2", x1_current + 30, y1_current - 44);
                             break;
-                        case "function":
-                            InsertMissingRow("function", x1_current + 388, line1Y);
+                        case "dwg_scale":
+                            InsertMissingRow("dwg_scale", x1_current + 30, y1_current - 64);
                             break;
-                        case "size":
-                            InsertMissingRow("size", x1_current + 516, line1Y);
+                        case "dwg_type":
+                            InsertMissingRow("dwg_type", x1_current + 30, y1_current - 54);
                             break;
-                        case "insulation":
-                            InsertMissingRow("insulation", x1_current + 570, line1Y);
+                        case "facility_id":
+                            InsertMissingRow("facility_id", x1_current + 145, y1_current - 72);
                             break;
-        
-                        // Second line tags
-                        case "from_ref":
-                            InsertMissingRow("from_ref", x1_current + 110, line2Y);
+                        case "dwg_number":
+                            InsertMissingRow("dwg_number", x1_current + 255, y1_current - 78);
                             break;
-                        case "to_ref":
-                            InsertMissingRow("to_ref", x1_current + 247, line2Y);
+                        case "dwg_size":
+                            InsertMissingRow("dwg_size", x1_current + 200, y1_current - 78);
                             break;
-                        case "voltage":
-                            InsertMissingRow("voltage", x1_current + 424, line2Y);
+                        case "dwg_sheet":
+                            InsertMissingRow("dwg_sheet", x1_current + 390, y1_current - 78);
                             break;
-                        case "conductors":
-                            InsertMissingRow("conductors", x1_current + 500, line2Y);
-                            break;
-                        case "length":
-                            InsertMissingRow("length", x1_current + 555, line2Y);
+                        case "dwg_rev":
+                            InsertMissingRow("dwg_rev", x1_current + 434, y1_current - 70);
                             break;
                     }
                 }
@@ -248,14 +230,16 @@ public class DwgTitleService
         
             return x1 switch
             { 
-                 _ when  x1_relative.IsBetween(0, 442) && y1_relative.IsBetween(14, 18) => "facility_name",
-                 _ when  x1_relative.IsBetween(30, 442) && y1_relative.IsBetween(28, 32) => "dwg_title",
+                 _ when  x1_relative.IsBetween(0, 450) && y1_relative.IsBetween(14, 18) => "facility_name",
+                 _ when  x1_relative.IsBetween(30, 450) && y1_relative.IsBetween(28, 34) => "dwg_title1",
+                 _ when  x1_relative.IsBetween(30, 450) && y1_relative.IsBetween(40, 48) => "dwg_title2",
+                 _ when  x1_relative.IsBetween(30, 450) && y1_relative.IsBetween(62, 68) => "dwg_scale",
                  _ when  x1_relative.IsBetween(30, 130) && y1_relative.IsBetween(52, 56) => "dwg_type",
                  _ when  x1_relative.IsBetween(145, 200) && y1_relative.IsBetween(70, 74) => "facility_id",
                  _ when  x1_relative.IsBetween(255, 375) && y1_relative.IsBetween(76, 80) => "dwg_number",
                  _ when  x1_relative.IsBetween(200, 237) && y1_relative.IsBetween(76, 80) => "dwg_size",
                  _ when  x1_relative.IsBetween(390, 420) && y1_relative.IsBetween(76, 80) => "dwg_sheet",
-                 _ when  x1_relative.IsBetween(435, 442) && y1_relative.IsBetween(76, 80) => "dwg_rev",
+                 _ when  x1_relative.IsBetween(434, 450) && y1_relative.IsBetween(70, 80) => "dwg_rev",
                  _ => string.Empty
             };
     }

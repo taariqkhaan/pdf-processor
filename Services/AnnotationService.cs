@@ -37,8 +37,7 @@ public class AnnotationService
         string query = @"
                 SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation, Tag, Item
                 FROM pdf_table
-                WHERE Tag IN ('facility_name', 'facility_id', 'dwg_title', 'dwg_size', 'dwg_number', 'dwg_sheet',
-            'dwg_rev', 'dwg_type')
+                WHERE Tag IN ('facility_name', 'facility_id', 'dwg_title1','dwg_title2', 'dwg_scale', 'dwg_size', 'dwg_number', 'dwg_sheet', 'dwg_rev', 'dwg_type')
                 ORDER BY Sheet ASC, Item ASC";
 
         using SQLiteCommand command = new(query, connection);
