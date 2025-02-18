@@ -35,25 +35,32 @@ public class AnnotationService
         connection.Open();
         
         string query = @"
-                SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation
+                SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation, Tag, Item
                 FROM pdf_table
-                ORDER BY Sheet ASC";
+                WHERE Tag IN ('facility_name', 'facility_id', 'dwg_title', 'dwg_size', 'dwg_number', 'dwg_sheet',
+            'dwg_rev', 'dwg_type')
+                ORDER BY Sheet ASC, Item ASC";
 
         using SQLiteCommand command = new(query, connection);
         using SQLiteDataReader reader = command.ExecuteReader();
         
+        // Define a font for drawing text (can be reused)
+        CustomFontResolver.Register();
+        XFont drawFont = new XFont("Arial", 7.0);
+        
         while (reader.Read())
         {
-            string textValue = reader.IsDBNull(0) ? string.Empty : reader.GetString(0).Trim();
+            string wordValue = reader.IsDBNull(0) ? string.Empty : reader.GetString(0).Trim();
             double real_x1 = reader.GetDouble(1);
             double real_y1 = reader.GetDouble(2);
             double real_x2 = reader.GetDouble(3);
             double real_y2 = reader.GetDouble(4);
             int pageIndex = reader.GetInt32(5) - 1;
             int wordRotation = reader.GetInt32(6);
+            string tagValue = reader.IsDBNull(7) ? string.Empty : reader.GetString(7).Trim();
 
             (double x1, double y1, double x2, double y2) = AdjustCoordinates(wordRotation, 
-                textValue, real_x1, real_y1, real_x2, real_y2);
+                wordValue, real_x1, real_y1, real_x2, real_y2);
             
 
             if (pageIndex >= 0 && pageIndex < document.Pages.Count)
@@ -71,7 +78,7 @@ public class AnnotationService
                     double rectHeight = adjustedY1 - adjustedY2;
 
                     // Choose color based on text value
-                    bool missingValue   = string.IsNullOrEmpty(textValue);
+                    bool missingValue   = string.IsNullOrEmpty(wordValue);
                     XColor outlineColor = missingValue
                         ? XColor.FromArgb(0, 255, 0, 0) // missing values
                         : XColor.FromArgb(0, 255, 230, 0); // tags present
@@ -99,9 +106,17 @@ public class AnnotationService
                     gfx.DrawRectangle(outlinePen, adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
                     gfx.DrawRectangle(brush,adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
 
-                    if (missingValue && !string.IsNullOrEmpty(textValue))
+                    if (string.IsNullOrEmpty(wordValue))
                     {
-                        
+                        // Measure the string so we can center it
+                        XSize textSize = gfx.MeasureString(tagValue, drawFont);
+
+                        // Center the text in the rectangle
+                        double textX = adjustedX1 + (adjustedWidth - textSize.Width) / 2.0;
+                        double textY = adjustedRectY + (adjustedHeight - textSize.Height) / 2.0 + textSize.Height * 0.9;
+
+                        // Draw the Type text in black
+                        gfx.DrawString(tagValue + "?", drawFont, XBrushes.Red, new XPoint(textX, textY));
                     }
                 }
             }
@@ -114,6 +129,11 @@ public class AnnotationService
     private (double, double, double, double) AdjustCoordinates(int wordRotation, 
         string textValue, double real_x1, double real_y1, double real_x2, double real_y2)
     {
+        if (string.IsNullOrEmpty(textValue))
+        {
+            return (real_x1, real_y1, real_x2, real_y2);
+        }
+        
         char firstChar = textValue[0];
         char lastChar = textValue[^1];
         double bottomLeftX = real_x1;
@@ -125,7 +145,7 @@ public class AnnotationService
         {
             case 0:
                 if (".,_".Contains(lastChar))
-                    topRightY += 9;
+                    topRightY += 5;
 
                 if ("-+=".Contains(firstChar))
                     bottomLeftY -= 2.5;

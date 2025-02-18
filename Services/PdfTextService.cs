@@ -46,10 +46,20 @@ namespace PdfProcessor.Services
             }
             return extractedText;
         }
-        private List<PdfTextModel> ExtractTextFromPage(Page page, int pageRotation, double pageWidth, double pageHeight, int pageNumber, string searchRegionType)
+        private List<PdfTextModel> ExtractTextFromPage(Page page, int pageRotation, double pageWidth, 
+            double pageHeight, int pageNumber, string searchRegionType)
         {
             List<PdfTextModel> textModels = new List<PdfTextModel>();
-            List<Word> words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToList();
+            List<Word> words = null;
+
+            if (searchRegionType == "TITLE")
+            {
+                words = page.GetWords(DefaultWordExtractor.Instance).ToList();
+            }
+            else
+            {
+                words = page.GetWords(NearestNeighbourWordExtractor.Instance).ToList();
+            }
             
             double lowestBottomLeftX = double.MaxValue;
             double lowestBottomLeftY = double.MaxValue;
@@ -76,8 +86,8 @@ namespace PdfProcessor.Services
             }
 
             // Check if the word falls within the search region
-            PdfRectangle searchRegion = _regionService.GetRegionByName(searchRegionType, 
-                pageWidth, pageHeight, pageRotation, lowestBottomLeftX,lowestBottomLeftY, highestTopRightY);
+            PdfRectangle searchRegion = _regionService.GetRegionByName(searchRegionType, pageWidth, pageHeight, 
+                pageRotation, lowestBottomLeftX,lowestBottomLeftY, highestTopRightY);
             
             foreach (Word word in words)
             {

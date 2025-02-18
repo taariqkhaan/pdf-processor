@@ -88,12 +88,11 @@ namespace PdfProcessor.ViewModels
 
                 //Extract text
                 PdfTextService _pdfTextService = new PdfTextService();
-                searchRegionType = "FULL";
+                searchRegionType = "TITLE";
                 stopwatch = Stopwatch.StartNew();
                 List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath, searchRegionType);
                 stopwatch.Stop();
                 Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
-                
                 
                 //Extract text
                 // DrawingService drawingService = new DrawingService();
@@ -126,13 +125,13 @@ namespace PdfProcessor.ViewModels
                 // cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
                 // stopwatch.Stop();
                 // Console.WriteLine($"CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
-
-                // Highlight cable schedule 
-                // AnnotatePdfService annotatePdfService = new AnnotatePdfService();
-                // stopwatch = Stopwatch.StartNew();
-                // annotatePdfService.AnnotatePdf(AllFilePath, OutputFolderPath);
-                // stopwatch.Stop();
-                // Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
+                
+                //Analyze the database for drawing title 
+                DwgTitleService dwgTitleService = new DwgTitleService();
+                stopwatch = Stopwatch.StartNew();
+                dwgTitleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                stopwatch.Stop();
+                Console.WriteLine($"DwgTitleService Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 // Highlight Drawing 
                 AnnotationService annotationService = new AnnotationService();

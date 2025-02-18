@@ -36,8 +36,33 @@ namespace PdfProcessor.Services
 
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
+            // Gather min X1 and max Y1 for each sheet in advance
+            var sheetBounds = new Dictionary<int, (double MinX, double MaxY)>();
+
+            string boundsQuery = @"
+                SELECT
+                    Sheet,
+                    MIN(X1) AS MinX,
+                    MAX(Y1) AS MaxY
+                FROM pdf_table
+                GROUP BY Sheet
+            ";
+
+            using (var boundsCmd = new SQLiteCommand(boundsQuery, connection))
+            using (var boundsReader = boundsCmd.ExecuteReader())
+            {
+                while (boundsReader.Read())
+                {
+                    int sheetNumber = boundsReader.GetInt32(0);
+                    double minX = boundsReader.IsDBNull(1) ? 0 : boundsReader.GetDouble(1);
+                    double maxY = boundsReader.IsDBNull(2) ? 0 : boundsReader.GetDouble(2);
+
+                    sheetBounds[sheetNumber] = (minX, maxY);
+                }
+            }
+            
             string selectQuery = @"
-                SELECT X1, Y1, Sheet, Word,
+                SELECT rowid, X1, Y1, Sheet
                 FROM pdf_table
                 ORDER BY Sheet, Y1 DESC;";
             
@@ -50,8 +75,6 @@ namespace PdfProcessor.Services
                 
                 double y1_current = 0;
                 double x1_current = 0;
-                double maxX1 = 0;
-                double maxY1 = 0;
                 bool y1_current_set = false;
                 
                 // This set will track all unique “Type” entries for the current ItemNumber
@@ -73,21 +96,22 @@ namespace PdfProcessor.Services
                         double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
                         double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
                         int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
-                        maxX1 = reader.IsDBNull(4) ? 0 : reader.GetDouble(4);
-                        maxY1 = reader.IsDBNull(5) ? 0 : reader.GetDouble(5);
+
 
                         if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
                         {
                             
                             if (lastSheetNumber != -1)
                             {
-                                // We finished an item: check for missing tags
                                 MissingTag(connection, currentItemTags, lastSheetNumber, currentItemNumber, x1_current, y1_current);
                                 currentItemTags.Clear();
                             }
 
-                            x1_current = 24; //sheetX1Min[sheetNumber];
-                            y1_current = 200; //sheetY1Max[sheetNumber] - 75;
+                            if (sheetBounds.TryGetValue(sheetNumber, out var bounds))
+                            {
+                                x1_current = bounds.MinX;
+                                y1_current = bounds.MaxY;
+                            }
                             currentItemNumber = 1;
                             lastSheetNumber = sheetNumber;
                             y1_current_set = false;
@@ -109,7 +133,6 @@ namespace PdfProcessor.Services
                         // Switches control for Y1 current to the second line of a cable item
                         if (Math.Abs(y1 - y1_current) > 18)
                         {
-                            // We finished the old item. Check for missing tags.
                             MissingTag(connection, currentItemTags, sheetNumber, currentItemNumber, x1_current, y1_current);
                         
                             // Reset for the new item
@@ -153,12 +176,12 @@ namespace PdfProcessor.Services
             double line1Y = y1_current;
             double line2Y = y1_current - 12;
             
-
-            // For convenience, define a local function that inserts a row
+        
+            // For convenience, a local function that inserts a row
             void InsertMissingRow(string type, double x1, double y1)
             {
                 double x2 = 0;
-                double y2 = y1 + 5.77; // per the user’s instruction for Y2
+                double y2 = y1 + 5.77; 
                 
                 double width = 0;
                 switch (type)
@@ -170,7 +193,7 @@ namespace PdfProcessor.Services
                     case "function":       width = 40; break;
                     case "size":           width = 10; break;
                     case "insulation":     width = 40; break;
-
+        
                     // second-line tags
                     case "from_ref":       width = 40; break;
                     case "to_ref":         width = 40; break;
@@ -179,29 +202,29 @@ namespace PdfProcessor.Services
                     case "length":         width = 10; break;
                 }
                 x2 = x1 + width;
-
+        
                 // Now insert a new row in pdf_table
-                // (You could also do a batch insert with a single transaction outside.)
                 string insertQuery = @"
                     INSERT INTO pdf_table 
-                    (SheetNumber, ItemNumber, Type, X1, Y1, X2, Y2, Text, TextRotation)
+                    (Sheet, Item, Tag, X1, Y1, X2, Y2, WordRotation, PageRotation, Word)
                     VALUES
-                    (@sheetNumber, @itemNumber, @type, @x1, @y1, @x2, @y2, @text, @textRotation);
+                    (@sheetNumber, @itemNumber, @tag, @x1, @y1, @x2, @y2, @wordRotation, @pageRotation, @word);
                 ";
-
+        
                 using var cmd = new SQLiteCommand(insertQuery, connection);
                 cmd.Parameters.AddWithValue("@sheetNumber", sheetNumber);
                 cmd.Parameters.AddWithValue("@itemNumber", itemNumber);
-                cmd.Parameters.AddWithValue("@type", type);
+                cmd.Parameters.AddWithValue("@tag", type);
                 cmd.Parameters.AddWithValue("@x1", x1);
                 cmd.Parameters.AddWithValue("@y1", y1);
                 cmd.Parameters.AddWithValue("@x2", x2);
                 cmd.Parameters.AddWithValue("@y2", y2);
-                cmd.Parameters.AddWithValue("@text", string.Empty);
-                cmd.Parameters.AddWithValue("@textRotation", 0);
+                cmd.Parameters.AddWithValue("@word", string.Empty);
+                cmd.Parameters.AddWithValue("@wordRotation", 0);
+                cmd.Parameters.AddWithValue("@pageRotation", 0);
                 cmd.ExecuteNonQuery();
             }
-
+        
             // Check each required type; if missing, insert it
             foreach (var requiredTag in RequiredTypes)
             {
@@ -228,7 +251,7 @@ namespace PdfProcessor.Services
                         case "insulation":
                             InsertMissingRow("insulation", x1_current + 570, line1Y);
                             break;
-
+        
                         // Second line tags
                         case "from_ref":
                             InsertMissingRow("from_ref", x1_current + 110, line2Y);
@@ -278,8 +301,7 @@ namespace PdfProcessor.Services
                      _ => string.Empty
                 };
             }
-
-            Console.WriteLine($"{x1},{y1}");
+            
             return string.Empty;
         }
         
@@ -287,12 +309,10 @@ namespace PdfProcessor.Services
         {
             var deleteQuery = @"
                 DELETE FROM pdf_table
-                WHERE ItemNumber IS NULL
-                   OR ItemNumber = '';
-            ";
-
+                WHERE Item = 0 ;";
+        
             using var cmd = new SQLiteCommand(deleteQuery, connection);
-            int rowsDeleted = cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
             
         }
         
