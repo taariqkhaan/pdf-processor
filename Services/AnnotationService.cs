@@ -77,7 +77,7 @@ public class AnnotationService
                     double rectHeight = adjustedY1 - adjustedY2;
 
                     // Choose color based on text value
-                    bool missingValue   = string.IsNullOrEmpty(wordValue);
+                    bool missingValue   = string.IsNullOrWhiteSpace(wordValue);
                     XColor outlineColor = missingValue
                         ? XColor.FromArgb(0, 255, 0, 0) // missing values
                         : XColor.FromArgb(0, 255, 230, 0); // tags present
@@ -102,10 +102,7 @@ public class AnnotationService
                     double adjustedWidth = rectWidth + penThickness;
                     double adjustedHeight = rectHeight + penThickness;
                     
-                    gfx.DrawRectangle(outlinePen, adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
-                    gfx.DrawRectangle(brush,adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
-
-                    if (string.IsNullOrEmpty(wordValue))
+                    if (string.IsNullOrWhiteSpace(wordValue))
                     {
                         // Measure the string so we can center it
                         XSize textSize = gfx.MeasureString(tagValue, drawFont);
@@ -116,7 +113,11 @@ public class AnnotationService
 
                         // Draw the Type text in black
                         gfx.DrawString(tagValue + "?", drawFont, XBrushes.Red, new XPoint(textX, textY));
+
                     }
+                    
+                    gfx.DrawRectangle(outlinePen, adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
+                    gfx.DrawRectangle(brush,adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
                 }
             }
         }

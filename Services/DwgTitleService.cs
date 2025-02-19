@@ -67,22 +67,20 @@ public class DwgTitleService
                 FROM pdf_table
                 ORDER BY Sheet, Y1 DESC;";
             
-
+            var processedSheets = new HashSet<int>();
+            
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
             {
                 int lastSheetNumber = -1;
                 double y1_current = 0;
                 double x1_current = 0;
-                bool y1_current_set = false;
                 
                 // This set will track all unique “Type” entries for the current ItemNumber
                 var currentItemTags = new HashSet<string>();
 
                 using (var transaction = connection.BeginTransaction())
-                using (var updateCmd =
-                       new SQLiteCommand(
-                           "UPDATE pdf_table SET Tag = @WordTag WHERE rowid = @RowId;",
+                using (var updateCmd = new SQLiteCommand("UPDATE pdf_table SET Tag = @WordTag WHERE rowid = @RowId;",
                            connection, transaction))
                 {
                     updateCmd.Parameters.Add(new SQLiteParameter("@WordTag"));
@@ -103,10 +101,15 @@ public class DwgTitleService
                                 x1_current = bounds.MinX;
                                 y1_current = bounds.MaxY;
                             }
+
+                            if (sheetNumber != lastSheetNumber && lastSheetNumber != -1 )
+                            {
+                                MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
+                                currentItemTags.Clear();
+                            }
+                            processedSheets.Add(sheetNumber);
                             lastSheetNumber = sheetNumber;
                             
-                            MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
-                            currentItemTags.Clear();
                         }
                         
                         string tag = IsValidTag(x1, y1, ref x1_current, ref y1_current);
@@ -120,12 +123,21 @@ public class DwgTitleService
                             currentItemTags.Add(tag);
                         }
                     }
-                    if (lastSheetNumber != -1 && currentItemTags.Count > 0)
+                    if (lastSheetNumber != -1)
                     {
                         MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
                         currentItemTags.Clear();
                     }
                     transaction.Commit();
+                }
+            }
+            
+            foreach (var sheetNumber in sheetBounds.Keys)
+            {
+                if (!processedSheets.Contains(sheetNumber))
+                {
+                    var bounds = sheetBounds[sheetNumber];
+                    MissingTag(connection, new HashSet<string>(), sheetNumber, bounds.MinX, bounds.MaxY);
                 }
             }
         }
@@ -145,16 +157,15 @@ public class DwgTitleService
                 double width = 0;
                 switch (type)
                 {
-                    case "facility_name":    width = 40; break;
+                    case "facility_name":    width = 300; break;
                     case "facility_id":      width = 40; break;
-                    case "dwg_title1":       width = 40; break;
-                    case "dwg_title2":       width = 40; break;
+                    case "dwg_title1":       width = 300; break;
                     case "dwg_type":         width = 40; break;
                     case "dwg_scale":        width = 40; break;
-                    case "dwg_size":         width = 40; break;
+                    case "dwg_size":         width = 30; break;
                     case "dwg_number":       width = 40; break;
                     case "dwg_sheet":        width = 40; break;
-                    case "dwg_rev":          width = 40; break;
+                    case "dwg_rev":          width = 20; break;
                 }
                 double x2 = x1 + width;
                 double y2 = y1 + 5.77;
@@ -189,34 +200,31 @@ public class DwgTitleService
                     switch (requiredTag)
                     {
                         case "facility_name":
-                            InsertMissingRow("facility_name", x1_current + 30, y1_current - 16);
+                            InsertMissingRow("facility_name", x1_current + 70, y1_current - 16);
                             break;
                         case "dwg_title1":
-                            InsertMissingRow("dwg_title1", x1_current + 30, y1_current - 30);
-                            break;
-                        case "dwg_title2":
-                            InsertMissingRow("dwg_title2", x1_current + 30, y1_current - 44);
+                            InsertMissingRow("dwg_title1", x1_current + 40, y1_current - 30);
                             break;
                         case "dwg_scale":
-                            InsertMissingRow("dwg_scale", x1_current + 30, y1_current - 64);
+                            InsertMissingRow("dwg_scale", x1_current + 40, y1_current - 64);
                             break;
                         case "dwg_type":
-                            InsertMissingRow("dwg_type", x1_current + 30, y1_current - 54);
+                            InsertMissingRow("dwg_type", x1_current + 40, y1_current - 54);
                             break;
                         case "facility_id":
                             InsertMissingRow("facility_id", x1_current + 145, y1_current - 72);
                             break;
                         case "dwg_number":
-                            InsertMissingRow("dwg_number", x1_current + 255, y1_current - 78);
+                            InsertMissingRow("dwg_number", x1_current + 295, y1_current - 78);
                             break;
                         case "dwg_size":
-                            InsertMissingRow("dwg_size", x1_current + 200, y1_current - 78);
+                            InsertMissingRow("dwg_size", x1_current + 210, y1_current - 78);
                             break;
                         case "dwg_sheet":
                             InsertMissingRow("dwg_sheet", x1_current + 390, y1_current - 78);
                             break;
                         case "dwg_rev":
-                            InsertMissingRow("dwg_rev", x1_current + 434, y1_current - 70);
+                            InsertMissingRow("dwg_rev", x1_current + 444, y1_current - 70);
                             break;
                     }
                 }
