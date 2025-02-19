@@ -1,16 +1,19 @@
 ﻿using System;
-using System.Data;
 using System.Data.SQLite;
 using System.IO;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
-using PdfSharp.Drawing;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Annot;
+using iText.Kernel.Colors;
+using iText.Kernel.Geom;
+using iText.Kernel.Pdf.Canvas;
+using iText.Kernel.Font;
+using iText.IO.Font.Constants;
 
 namespace PdfProcessor.Services;
 
 public class AnnotationService
 {
-    public void AnnotatePdf(string pdfPath, string outputFolder)
+    public void AnnotatePdf(string pdfPath, string outputFolder, string key)
     {
         if (!File.Exists(pdfPath))
         {
@@ -18,122 +21,134 @@ public class AnnotationService
             return;
         }
 
-        string dbPath = Path.Combine(Path.GetDirectoryName(pdfPath)!, "data.db");
+        string dbPath = System.IO.Path.Combine( System.IO.Path.GetDirectoryName(pdfPath)!, "data.db");
         if (!File.Exists(dbPath))
         {
             Console.WriteLine("Database file not found.");
             return;
         }
+
+        string outputPdfPath =  System.IO.Path.Combine(outputFolder, "highlighted_dwg.pdf");
+
+        using PdfReader reader = new(pdfPath);
+        using PdfWriter writer = new(outputPdfPath);
+        using PdfDocument pdfDoc = new(reader, writer);
         
-        string outputPdfPath = Path.Combine(outputFolder, "highlighted_dwg.pdf");
-        
-        using PdfDocument document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Modify);
-        
-        // Connect to SQLite and fetch sorted data
         string connectionString = $"Data Source={dbPath};Version=3;";
         using SQLiteConnection connection = new(connectionString);
         connection.Open();
         
-        string query = @"
+        // Get the list of items to be annotated
+        AnnotationQuery annotationQuery = new AnnotationQuery();
+        List<string> userTags = annotationQuery.GetFilters(key);
+        
+        // Default case if no tags are provided
+        string whereClause = userTags.Any()
+            ? $"WHERE Tag IN ({string.Join(", ", userTags.Select(tag => $"'{tag}'"))})"
+            : ""; // If no filter is needed, leave it blank
+
+        const int batchSize = 500;
+        int offset = 0;
+        bool hasMoreRecords = true;
+
+        while (hasMoreRecords)
+        {
+            string query = @$"
                 SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation, Tag, Item
                 FROM pdf_table
-                WHERE Tag IN ('facility_name', 'facility_id', 'dwg_title1','dwg_title2', 'dwg_scale', 'dwg_size', 'dwg_number', 'dwg_sheet', 'dwg_rev', 'dwg_type')
-                ORDER BY Sheet ASC, Item ASC";
+                {whereClause}
+                ORDER BY Sheet ASC, Item ASC
+                LIMIT {batchSize} OFFSET {offset}";
 
-        using SQLiteCommand command = new(query, connection);
-        using SQLiteDataReader reader = command.ExecuteReader();
-        
-        // Define a font for drawing text (can be reused)
-        CustomFontResolver.Register();
-        XFont drawFont = new XFont("Arial", 7.0);
-        
-        while (reader.Read())
-        {
-            string wordValue = reader.IsDBNull(0) ? string.Empty : reader.GetString(0).Trim();
-            double real_x1 = reader.GetDouble(1);
-            double real_y1 = reader.GetDouble(2);
-            double real_x2 = reader.GetDouble(3);
-            double real_y2 = reader.GetDouble(4);
-            int pageIndex = reader.GetInt32(5) - 1;
-            int wordRotation = reader.GetInt32(6);
-            string tagValue = reader.IsDBNull(7) ? string.Empty : reader.GetString(7).Trim();
+            using SQLiteCommand command = new(query, connection);
+            using SQLiteDataReader readerDb = command.ExecuteReader();
 
-            (double x1, double y1, double x2, double y2) = AdjustCoordinates(wordRotation, 
-                wordValue, real_x1, real_y1, real_x2, real_y2);
-            
+            hasMoreRecords = readerDb.HasRows;
+            if (!hasMoreRecords) break;
 
-            if (pageIndex >= 0 && pageIndex < document.Pages.Count)
+            while (readerDb.Read())
             {
-                PdfPage page = document.Pages[pageIndex];
+                string wordValue = readerDb.IsDBNull(0) ? string.Empty : readerDb.GetString(0).Trim();
+                double real_x1 = readerDb.GetDouble(1);
+                double real_y1 = readerDb.GetDouble(2);
+                double real_x2 = readerDb.GetDouble(3);
+                double real_y2 = readerDb.GetDouble(4);
+                int pageIndex = readerDb.GetInt32(5) - 1;
+                int wordRotation = readerDb.GetInt32(6);
+                string tagValue = readerDb.IsDBNull(7) ? string.Empty : readerDb.GetString(7).Trim();
 
-                using (XGraphics gfx = XGraphics.FromPdfPage(page))
+                if (pageIndex < 0 || pageIndex >= pdfDoc.GetNumberOfPages())
+                    continue;
+
+                PdfPage page = pdfDoc.GetPage(pageIndex + 1);
+                
+                int pageRotation = page.GetRotation();
+                float pageWidth = page.GetPageSize().GetWidth();
+                float pageHeight = page.GetPageSize().GetHeight();
+                Rectangle annotationRect;
+                double newX1 = 0;
+                double newY1 = 0;
+                double newX2 = 0;
+                double newY2 = 0;
+                double rectWidth = 0;
+                double rectHeight = 0;
+                
+                (double x1, double y1, double x2, double y2) = AdjustCoordinates(wordRotation, wordValue, real_x1, real_y1, real_x2, real_y2);
+
+                if (pageRotation == 90)
                 {
-                    double pageHeight = page.Height;
-                    double adjustedY1 = pageHeight - y1;
-                    double adjustedY2 = pageHeight - y2;
+                    newX1 = pageWidth - y2;
+                    newY1 = x1;
+                    newX2 = pageWidth - y1;
+                    newY2 = x2;
 
-                    // Draw the rectangle
-                    double rectWidth = x2 - x1;
-                    double rectHeight = adjustedY1 - adjustedY2;
-
-                    // Choose color based on text value
-                    bool missingValue   = string.IsNullOrWhiteSpace(wordValue);
-                    XColor outlineColor = missingValue
-                        ? XColor.FromArgb(0, 255, 0, 0) // missing values
-                        : XColor.FromArgb(0, 255, 230, 0); // tags present
-                    XColor fillcolor =  missingValue
-                        ? XColor.FromArgb(50, 255, 0, 0) // missing values
-                        : XColor.FromArgb(80, 255, 230, 0); // tags present
-
-                    double penThickness = 3; // Thickness of the outline
-                    XPen outlinePen = new XPen(outlineColor, 1);
-                    XSolidBrush brush = new XSolidBrush(fillcolor);
-
-                    if (page.Rotation != 0)
-                    {
-                        gfx.TranslateTransform(page.Width - page.Height, page.Height);
-                        gfx.RotateTransform(270);
-                    }
-                    
-                    // Adjust rectangle size & position for outward-growing stroke
-                    double outlineOffset = penThickness / 2;
-                    double adjustedX1 = x1 - outlineOffset;
-                    double adjustedRectY    = adjustedY2 - outlineOffset;
-                    double adjustedWidth = rectWidth + penThickness;
-                    double adjustedHeight = rectHeight + penThickness;
-                    
-                    if (string.IsNullOrWhiteSpace(wordValue))
-                    {
-                        // Measure the string so we can center it
-                        XSize textSize = gfx.MeasureString(tagValue, drawFont);
-
-                        // Center the text in the rectangle
-                        double textX = adjustedX1 + (adjustedWidth - textSize.Width) / 2.0;
-                        double textY = adjustedRectY + (adjustedHeight - textSize.Height) / 2.0 + textSize.Height * 0.9;
-
-                        // Draw the Type text in black
-                        gfx.DrawString(tagValue + "?", drawFont, XBrushes.Red, new XPoint(textX, textY));
-
-                    }
-                    
-                    gfx.DrawRectangle(outlinePen, adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
-                    gfx.DrawRectangle(brush,adjustedX1, adjustedRectY, adjustedWidth, adjustedHeight);
+                    rectWidth = newX2 - newX1;
+                    rectHeight = newY2 - newY1;
                 }
+                else if (pageRotation == 0)
+                {
+                    newX1 = x1;
+                    newY1 = y1;
+                    newY2 = y2;
+                    
+                    rectWidth = x2 - x1;
+                    rectHeight = newY2 - newY1;
+                }
+                
+                annotationRect = new Rectangle((float)newX1, (float)newY1, (float)rectWidth, (float)rectHeight);
+                
+                bool missingValue = string.IsNullOrWhiteSpace(wordValue);
+                float opacity = 0.6f;
+                float[] colorComponents = missingValue ? new float[] { 1, 0, 0 } : new float[] { 1, 0.9f, 0 };
+                float[] interiorColor = missingValue ? new float[] { 1, 0, 0 } : new float[] { 1, 0.9f, 0 };
+
+                PdfSquareAnnotation annotation = new PdfSquareAnnotation(annotationRect);
+                annotation.SetColor(new DeviceRgb(colorComponents[0], colorComponents[1], colorComponents[2]));
+                annotation.SetInteriorColor(new PdfArray(interiorColor));
+                annotation.SetTitle(new PdfString("Annotation"));
+                annotation.SetContents(missingValue ? tagValue + "?" : tagValue);
+                annotation.SetBorder(new PdfArray(new float[] { 1, 1, 1 }));
+                
+                annotation.Put(PdfName.CA, new PdfNumber(opacity)); // Opacity (40%)
+                
+                page.AddAnnotation(annotation);
+                
             }
+
+            offset += batchSize;
         }
-        document.Save(outputPdfPath);
+
         Console.WriteLine($"Annotated PDF saved at: {outputPdfPath}");
     }
-    
-    // Adjusts coordinates from PDFpig to work with PDFSharp based on text rotation
-    private (double, double, double, double) AdjustCoordinates(int wordRotation, 
+
+    private (double, double, double, double) AdjustCoordinates(int wordRotation,
         string textValue, double real_x1, double real_y1, double real_x2, double real_y2)
     {
         if (string.IsNullOrEmpty(textValue))
         {
             return (real_x1, real_y1, real_x2, real_y2);
         }
-        
+
         char firstChar = textValue[0];
         char lastChar = textValue[^1];
         double bottomLeftX = real_x1;
@@ -146,70 +161,41 @@ public class AnnotationService
             case 0:
                 if (".,_".Contains(lastChar))
                     topRightY += 5;
-
                 if ("-+=".Contains(firstChar))
                     bottomLeftY -= 2.5;
-
                 if ("-+=".Contains(lastChar))
                     topRightY += 4;
-
                 if ("`'\"".Contains(firstChar))
                     bottomLeftY -= 5;
                 break;
-
+        
             case 90:
                 topRightY -= 4;
                 bottomLeftY += 4;
-
                 if (".,_".Contains(lastChar))
                     topRightX += 9;
-
                 if ("-+=".Contains(firstChar))
                     bottomLeftX -= 2.5;
-
                 if ("-+=".Contains(lastChar))
                     topRightX += 4;
-
                 if ("`'\"".Contains(firstChar))
                     bottomLeftX -= 5;
                 break;
-
+        
             case 180:
                 (bottomLeftX, topRightX) = (topRightX, bottomLeftX);
                 (bottomLeftY, topRightY) = (topRightY, bottomLeftY);
-
                 if (".,_".Contains(lastChar))
                     bottomLeftY -= 9;
-
                 if ("-+=".Contains(firstChar))
                     topRightY += 4;
-
                 if ("-+=".Contains(lastChar))
                     bottomLeftY -= 5;
-
                 if ("`'\"".Contains(firstChar))
                     topRightY += 4;
                 break;
-
-            case 270:
-                bottomLeftX += 5;
-                topRightX -= 5;
-
-                if (".,_".Contains(firstChar))
-                    bottomLeftX += 2;
-
-                if (".,_".Contains(lastChar))
-                    topRightX -= 12;
-
-                if ("-+=".Contains(lastChar))
-                    topRightX -= 7;
-
-                if ("`'\"".Contains(firstChar))
-                    bottomLeftX += 10;
-                break;
         }
-
         return (bottomLeftX, bottomLeftY, topRightX, topRightY);
     }
-
+    
 }

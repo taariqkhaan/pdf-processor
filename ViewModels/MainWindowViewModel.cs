@@ -17,7 +17,7 @@ namespace PdfProcessor.ViewModels
         private string _allFilePath;
         private string _outputFolderPath;
         private readonly PdfTextService _pdfTextService;
-        private string searchRegionType;
+        private string DocumentType;
         private Stopwatch stopwatch;
         
         public bool IsEnabled
@@ -85,28 +85,15 @@ namespace PdfProcessor.ViewModels
 
             await Task.Run(() =>
             {
-
+                DocumentType = "TITLE";
+                
+                
                 //Extract text
                 PdfTextService _pdfTextService = new PdfTextService();
-                searchRegionType = "TITLE";
                 stopwatch = Stopwatch.StartNew();
-                List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath, searchRegionType);
+                List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath, DocumentType);
                 stopwatch.Stop();
                 Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
-                
-                //Extract text
-                // DrawingService drawingService = new DrawingService();
-                // stopwatch = Stopwatch.StartNew();
-                // List<PdfTextModel> extractedData = drawingService.ExtractText(AllFilePath);
-                // stopwatch.Stop();
-                // Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
-                
-                // // Extract text and save .csv file using python
-                // PdfToTextPython pdfToTextPython = new PdfToTextPython();
-                // Stopwatch stopwatch = Stopwatch.StartNew();
-                // List<PdfTextModel> extractedData = pdfToTextPython.ExtractTextFromPdf(AllFilePath);
-                // stopwatch.Stop();
-                // Console.WriteLine($"SaveToCsv using Python Time: {stopwatch.ElapsedMilliseconds} ms");
                 
                 //Save text in .csv and .db format
                 ExportService exportService = new ExportService();
@@ -119,29 +106,41 @@ namespace PdfProcessor.ViewModels
                 stopwatch.Stop();
                 Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
                 
-                //Analyze the database for cable schedule 
-                // CableScheduleService cableScheduleService = new CableScheduleService();
-                // stopwatch = Stopwatch.StartNew();
-                // cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                // stopwatch.Stop();
-                // Console.WriteLine($"CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
-                
-                //Analyze the database for drawing title 
-                DwgTitleService dwgTitleService = new DwgTitleService();
-                stopwatch = Stopwatch.StartNew();
-                dwgTitleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                stopwatch.Stop();
-                Console.WriteLine($"DwgTitleService Time: {stopwatch.ElapsedMilliseconds} ms");
+                if (DocumentType == "TITLE")
+                {
+                    //Analyze the database for drawing title 
+                    DwgTitleService dwgTitleService = new DwgTitleService();
+                    stopwatch = Stopwatch.StartNew();
+                    dwgTitleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                    stopwatch.Stop();
+                    Console.WriteLine($"DwgTitleService Time: {stopwatch.ElapsedMilliseconds} ms");
+                }
+                else if (DocumentType == "BOW")
+                {
+                    //Analyze the database for cable schedule 
+                    CableScheduleService cableScheduleService = new CableScheduleService();
+                    stopwatch = Stopwatch.StartNew();
+                    cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                    stopwatch.Stop();
+                    Console.WriteLine($"CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
+                }
+                else if (DocumentType == "DWG")
+                {
+                    //Analyze the database for drawing title
+                    DrawingService drawingService = new DrawingService();
+                    stopwatch = Stopwatch.StartNew();
+                    drawingService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                    stopwatch.Stop();
+                    Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
+                }
                 
                 // Highlight Drawing 
                 AnnotationService annotationService = new AnnotationService();
                 stopwatch = Stopwatch.StartNew();
-                annotationService.AnnotatePdf(AllFilePath, OutputFolderPath);
+                annotationService.AnnotatePdf(AllFilePath, OutputFolderPath, DocumentType);
                 stopwatch.Stop();
                 Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
                 
-                
-
             });
             System.Windows.MessageBox.Show($"Processing success!");
             IsEnabled = true;

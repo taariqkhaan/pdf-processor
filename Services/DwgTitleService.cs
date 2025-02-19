@@ -72,7 +72,7 @@ public class DwgTitleService
             using (var cmd = new SQLiteCommand(selectQuery, connection))
             using (var reader = cmd.ExecuteReader())
             {
-                int lastSheetNumber = -1;
+                int lastSheetNumber = 0;
                 double y1_current = 0;
                 double x1_current = 0;
                 
@@ -92,26 +92,22 @@ public class DwgTitleService
                         double x1 = reader.IsDBNull(1) ? 0 : reader.GetDouble(1);
                         double y1 = reader.IsDBNull(2) ? 0 : reader.GetDouble(2);
                         int sheetNumber = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
-
-
-                        if (lastSheetNumber == -1 || sheetNumber != lastSheetNumber)
+                        
+                        if (sheetNumber != lastSheetNumber)
                         {
+                            if (lastSheetNumber != 0 )
+                            {
+                                MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
+                                currentItemTags.Clear();
+                            }
                             if (sheetBounds.TryGetValue(sheetNumber, out var bounds))
                             {
                                 x1_current = bounds.MinX;
                                 y1_current = bounds.MaxY;
                             }
-
-                            if (sheetNumber != lastSheetNumber && lastSheetNumber != -1 )
-                            {
-                                MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
-                                currentItemTags.Clear();
-                            }
                             processedSheets.Add(sheetNumber);
                             lastSheetNumber = sheetNumber;
-                            
                         }
-                        
                         string tag = IsValidTag(x1, y1, ref x1_current, ref y1_current);
 
                         if (!string.IsNullOrEmpty(tag))
@@ -123,9 +119,10 @@ public class DwgTitleService
                             currentItemTags.Add(tag);
                         }
                     }
-                    if (lastSheetNumber != -1)
+                    if (lastSheetNumber != 0)
                     {
                         MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
+                        Console.WriteLine($"{lastSheetNumber}, {x1_current}, {y1_current}");
                         currentItemTags.Clear();
                     }
                     transaction.Commit();

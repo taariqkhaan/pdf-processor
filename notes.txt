@@ -200,9 +200,16 @@ sheet number to csv in the output folder passed on the parameter.
 
 'facility_name', 'facility_id', 'dwg_title1','dwg_title2', 'dwg_scale', 'dwg_size', 'dwg_number', 'dwg_sheet', 'dwg_rev', 'dwg_type'
 
+ if (page.Rotation != 0)
+    {
+        gfx.TranslateTransform( page.Width - page.Height,page.Height);
+        gfx.RotateTransform(270);
+    }
 
 
-
+Console.WriteLine($"Page {pageIndex} rotation: {page.Rotation}");
+Console.WriteLine($"{wordY1}, {word.Text}, {pageNumber}");
+Console.WriteLine($"{}");
 
 
 
