@@ -13,7 +13,7 @@ namespace PdfProcessor.Services;
 
 public class AnnotationService
 {
-    public void AnnotatePdf(string pdfPath, string outputFolder, string key)
+    public void AnnotatePdf(string pdfPath, string key)
     {
         if (!File.Exists(pdfPath))
         {
@@ -28,7 +28,10 @@ public class AnnotationService
             return;
         }
 
-        string outputPdfPath =  System.IO.Path.Combine(outputFolder, "highlighted_dwg.pdf");
+        string outputPdfPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(pdfPath), 
+            $"highlighted_{key}.pdf");
+        
+        string tableName = key + "_table";
 
         using PdfReader reader = new(pdfPath);
         using PdfWriter writer = new(outputPdfPath);
@@ -53,9 +56,9 @@ public class AnnotationService
 
         while (hasMoreRecords)
         {
-            string query = @$"
-                SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation, Tag, Item
-                FROM pdf_table
+            string query = $@"
+                SELECT Word, X1, Y1, X2, Y2, Sheet, WordRotation, Tag, Item, ColorFlag
+                FROM {tableName}
                 {whereClause}
                 ORDER BY Sheet ASC, Item ASC
                 LIMIT {batchSize} OFFSET {offset}";
@@ -76,6 +79,7 @@ public class AnnotationService
                 int pageIndex = readerDb.GetInt32(5) - 1;
                 int wordRotation = readerDb.GetInt32(6);
                 string tagValue = readerDb.IsDBNull(7) ? string.Empty : readerDb.GetString(7).Trim();
+                int colorFlag = readerDb.GetInt32(9);
 
                 if (pageIndex < 0 || pageIndex >= pdfDoc.GetNumberOfPages())
                     continue;
@@ -119,19 +123,29 @@ public class AnnotationService
                 
                 bool missingValue = string.IsNullOrWhiteSpace(wordValue);
                 float opacity = 0.6f;
-                float[] colorComponents = missingValue ? new float[] { 1, 0, 0 } : new float[] { 1, 0.9f, 0 };
-                float[] interiorColor = missingValue ? new float[] { 1, 0, 0 } : new float[] { 1, 0.9f, 0 };
+                float[] colorComponents = [];
 
-                PdfSquareAnnotation annotation = new PdfSquareAnnotation(annotationRect);
-                annotation.SetColor(new DeviceRgb(colorComponents[0], colorComponents[1], colorComponents[2]));
-                annotation.SetInteriorColor(new PdfArray(interiorColor));
-                annotation.SetTitle(new PdfString("Annotation"));
-                annotation.SetContents(missingValue ? tagValue + "?" : tagValue);
-                annotation.SetBorder(new PdfArray(new float[] { 0.1f, 0.1f, 0.1f }));
+                if (colorFlag != 0) // Default: not relevant for annotation
+                {
+                    if (colorFlag == 1) //Correct: Yellow
+                    {
+                        colorComponents = new [] { 1f, 0.9f, 0f };
+                    }
+                    else if (colorFlag == 2) // Missing: Red
+                    {
+                        colorComponents = new [] { 1f, 0f, 0f };
+                    }
+                    
+                    PdfSquareAnnotation annotation = new PdfSquareAnnotation(annotationRect);
+                    annotation.SetColor(new DeviceRgb(colorComponents[0], colorComponents[1], colorComponents[2]));
+                    annotation.SetInteriorColor(new PdfArray(colorComponents));
+                    annotation.SetTitle(new PdfString("Annotation"));
+                    annotation.SetContents(missingValue ? tagValue + "?" : tagValue);
+                    annotation.SetBorder(new PdfArray(new float[] { 0.1f, 0.1f, 0.1f }));
+                    annotation.Put(PdfName.CA, new PdfNumber(opacity)); // Opacity (40%)
                 
-                annotation.Put(PdfName.CA, new PdfNumber(opacity)); // Opacity (40%)
-                
-                page.AddAnnotation(annotation);
+                    page.AddAnnotation(annotation);
+                }
                 
             }
 
@@ -214,5 +228,6 @@ public class AnnotationService
         }
         return (bottomLeftX, bottomLeftY, topRightX, topRightY);
     }
+    
     
 }

@@ -12,6 +12,7 @@ public class PdfTextModel
     public int WordRotation { get; set; }
     public string WordTag { get; set; }
     public int ItemNumber { get; set; }
+    public int ColorFlag { get; set; }
 
     public PdfTextModel(string pageWord, 
         double bottomLeftX, 
@@ -22,7 +23,8 @@ public class PdfTextModel
         int pageRotation, 
         int wordRotation,
         string wordTag, 
-        int itemNumber)
+        int itemNumber,
+        int colorFlag)
     {
         PageWord = pageWord;
         BottomLeftX = bottomLeftX;
@@ -34,5 +36,6 @@ public class PdfTextModel
         WordRotation = wordRotation;
         WordTag = wordTag;
         ItemNumber = itemNumber;
+        ColorFlag = colorFlag;
     }
 }

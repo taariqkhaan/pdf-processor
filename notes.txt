@@ -211,6 +211,35 @@ Console.WriteLine($"Page {pageIndex} rotation: {page.Rotation}");
 Console.WriteLine($"{wordY1}, {word.Text}, {pageNumber}");
 Console.WriteLine($"{}");
 
+PdfTextService _pdfTextService = new PdfTextService();
+stopwatch = Stopwatch.StartNew();
+List<PdfTextModel> extractedBowData = _pdfTextService.ExtractTextAndCoordinates(BowPath, DocumentType);
+stopwatch.Stop();
+Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
+
+
+
+-------------------------------------------------------------------------------------------------------------
+select Word,
+sort the BOW_table by sheet asc, item asc, tag
+group by word value is pres
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

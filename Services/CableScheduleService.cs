@@ -26,6 +26,7 @@ namespace PdfProcessor.Services
                     connection.Open();
                     UpdateRowsBasedOnConditions(connection);
                     DeleteNullRows(connection);
+                    UpdateColorFlag(connection);
                 }
             }
             catch (Exception ex)
@@ -44,7 +45,7 @@ namespace PdfProcessor.Services
                     Sheet,
                     MIN(X1) AS MinX,
                     MAX(Y1) AS MaxY
-                FROM pdf_table
+                FROM BOW_table
                 GROUP BY Sheet
             ";
 
@@ -63,7 +64,7 @@ namespace PdfProcessor.Services
             
             string selectQuery = @"
                 SELECT rowid, X1, Y1, Sheet
-                FROM pdf_table
+                FROM BOW_table
                 ORDER BY Sheet, Y1 DESC;";
             
 
@@ -83,7 +84,7 @@ namespace PdfProcessor.Services
                 using (var transaction = connection.BeginTransaction())
                 using (var updateCmd =
                        new SQLiteCommand(
-                           "UPDATE pdf_table SET Tag = @WordTag, Item = @ItemNumber WHERE rowid = @RowId;",
+                           "UPDATE BOW_table SET Tag = @WordTag, Item = @ItemNumber WHERE rowid = @RowId;",
                            connection, transaction))
                 {
                     updateCmd.Parameters.Add(new SQLiteParameter("@WordTag"));
@@ -203,12 +204,12 @@ namespace PdfProcessor.Services
                 }
                 x2 = x1 + width;
         
-                // Now insert a new row in pdf_table
+                // Now insert a new row in BOW_table
                 string insertQuery = @"
-                    INSERT INTO pdf_table 
-                    (Sheet, Item, Tag, X1, Y1, X2, Y2, WordRotation, PageRotation, Word)
+                    INSERT INTO BOW_table 
+                    (Sheet, Item, Tag, X1, Y1, X2, Y2, WordRotation, PageRotation, Word, ColorFlag)
                     VALUES
-                    (@sheetNumber, @itemNumber, @tag, @x1, @y1, @x2, @y2, @wordRotation, @pageRotation, @word);
+                    (@sheetNumber, @itemNumber, @tag, @x1, @y1, @x2, @y2, @wordRotation, @pageRotation, @word, @colorFlag);
                 ";
         
                 using var cmd = new SQLiteCommand(insertQuery, connection);
@@ -222,6 +223,7 @@ namespace PdfProcessor.Services
                 cmd.Parameters.AddWithValue("@word", string.Empty);
                 cmd.Parameters.AddWithValue("@wordRotation", 0);
                 cmd.Parameters.AddWithValue("@pageRotation", 0);
+                cmd.Parameters.AddWithValue("@colorFlag", 0);
                 cmd.ExecuteNonQuery();
             }
         
@@ -308,13 +310,25 @@ namespace PdfProcessor.Services
         private void DeleteNullRows(SQLiteConnection connection)
         {
             var deleteQuery = @"
-                DELETE FROM pdf_table
+                DELETE FROM BOW_table
                 WHERE Item = 0 ;";
         
             using var cmd = new SQLiteCommand(deleteQuery, connection);
             cmd.ExecuteNonQuery();
             
         }
+        
+        private void UpdateColorFlag(SQLiteConnection connection)
+        {
+            string updateQuery = @"
+        UPDATE BOW_table
+        SET ColorFlag = 2
+        WHERE (Word IS NULL OR TRIM(Word) = '');";
+
+            using var cmd = new SQLiteCommand(updateQuery, connection);
+            int affectedRows = cmd.ExecuteNonQuery();
+        }
+
         
     }
 }

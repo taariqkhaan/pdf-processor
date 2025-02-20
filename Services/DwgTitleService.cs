@@ -27,6 +27,7 @@ public class DwgTitleService
                     connection.Open();
                     UpdateRowsBasedOnConditions(connection);
                     DeleteNullRows(connection);
+                    UpdateColorFlag(connection);
                 }
             }
             catch (Exception ex)
@@ -46,7 +47,7 @@ public class DwgTitleService
                     Sheet,
                     MIN(X1) AS MinX,
                     MAX(Y1) AS MaxY
-                FROM pdf_table
+                FROM DWG_table
                 GROUP BY Sheet
             ";
 
@@ -65,7 +66,7 @@ public class DwgTitleService
             
             string selectQuery = @"
                 SELECT rowid, X1, Y1, Sheet
-                FROM pdf_table
+                FROM DWG_table
                 ORDER BY Sheet, Y1 DESC;";
             
             var processedSheets = new HashSet<int>();
@@ -81,7 +82,7 @@ public class DwgTitleService
                 var currentItemTags = new HashSet<string>();
 
                 using (var transaction = connection.BeginTransaction())
-                using (var updateCmd = new SQLiteCommand("UPDATE pdf_table SET Tag = @WordTag WHERE rowid = @RowId;",
+                using (var updateCmd = new SQLiteCommand("UPDATE DWG_table SET Tag = @WordTag WHERE rowid = @RowId;",
                            connection, transaction))
                 {
                     updateCmd.Parameters.Add(new SQLiteParameter("@WordTag"));
@@ -123,7 +124,6 @@ public class DwgTitleService
                     if (lastSheetNumber != 0)
                     {
                         MissingTag(connection, currentItemTags, lastSheetNumber, x1_current, y1_current);
-                        Console.WriteLine($"{lastSheetNumber}, {x1_current}, {y1_current}");
                         currentItemTags.Clear();
                     }
                     transaction.Commit();
@@ -168,12 +168,12 @@ public class DwgTitleService
                 double x2 = x1 + width;
                 double y2 = y1 + 5.77;
         
-                // Now insert a new row in pdf_table
+                // Now insert a new row in DWG_table
                 string insertQuery = @"
-                    INSERT INTO pdf_table 
-                    (Sheet, Item, Tag, X1, Y1, X2, Y2, WordRotation, PageRotation, Word)
+                    INSERT INTO DWG_table
+                    (Sheet, Item, Tag, X1, Y1, X2, Y2, WordRotation, PageRotation, Word, ColorFlag)
                     VALUES
-                    (@sheetNumber, @itemNumber, @tag, @x1, @y1, @x2, @y2, @wordRotation, @pageRotation, @word);
+                    (@sheetNumber, @itemNumber, @tag, @x1, @y1, @x2, @y2, @wordRotation, @pageRotation, @word, @colorFlag);
                 ";
         
                 using var cmd = new SQLiteCommand(insertQuery, connection);
@@ -187,6 +187,7 @@ public class DwgTitleService
                 cmd.Parameters.AddWithValue("@word", string.Empty);
                 cmd.Parameters.AddWithValue("@wordRotation", 0);
                 cmd.Parameters.AddWithValue("@pageRotation", 0);
+                cmd.Parameters.AddWithValue("@colorFlag", 0);
                 cmd.ExecuteNonQuery();
             }
         
@@ -253,12 +254,23 @@ public class DwgTitleService
         private void DeleteNullRows(SQLiteConnection connection)
         {
             var deleteQuery = @"
-                DELETE FROM pdf_table
+                DELETE FROM DWG_table
                 WHERE Tag = 'NA';
             ";
 
             using var cmd = new SQLiteCommand(deleteQuery, connection);
             cmd.ExecuteNonQuery();
+        }
+        
+        private void UpdateColorFlag(SQLiteConnection connection)
+        {
+            string updateQuery = @"
+        UPDATE DWG_table
+        SET ColorFlag = 2
+        WHERE (Word IS NULL OR TRIM(Word) = '');";
+
+            using var cmd = new SQLiteCommand(updateQuery, connection);
+            int affectedRows = cmd.ExecuteNonQuery();
         }
 
     }

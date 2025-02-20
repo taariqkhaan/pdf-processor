@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
 using System.IO;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Forms;
 using PdfProcessor.Models;
 using PdfProcessor.Services;
+
 
 
 
@@ -14,11 +16,17 @@ namespace PdfProcessor.ViewModels
     {
         private bool _isEnabled = true;
         
-        private string _allFilePath;
-        private string _outputFolderPath;
+        private string _bowPath;
+        private string _drawingsPath;
+        
+        private bool _processBow;
+        private bool _analyzeDatabase;
+        private bool _processDrawing;
+        
         private readonly PdfTextService _pdfTextService;
-        private string DocumentType;
+        private string documentType;
         private Stopwatch stopwatch;
+        private string _statusMessage;
         
         public bool IsEnabled
         {
@@ -26,48 +34,94 @@ namespace PdfProcessor.ViewModels
             set { _isEnabled = value; OnPropertyChanged(nameof(IsEnabled)); }
         }
 
-        public string AllFilePath
+        public string BowPath
         {
-            get => _allFilePath;
-            set { _allFilePath = value; OnPropertyChanged(nameof(AllFilePath)); }
+            get => _bowPath;
+            set { _bowPath = value; OnPropertyChanged(nameof(BowPath)); }
         }
 
-        public string OutputFolderPath
+        public string DrawingsPath
         {
-            get => _outputFolderPath;
-            set { _outputFolderPath = value; OnPropertyChanged(nameof(OutputFolderPath)); }
+            get => _drawingsPath;
+            set { _drawingsPath = value; OnPropertyChanged(nameof(DrawingsPath)); }
+        }
+        
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                _statusMessage = value;
+                OnPropertyChanged(nameof(StatusMessage));
+            }
+        }
+        
+        public bool ProcessBow
+        {
+            get => _processBow;
+            set
+            {
+                _processBow = value;
+                OnPropertyChanged(nameof(ProcessBow));
+                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+            }
         }
 
-        public ICommand BrowseFileCommand { get; }
-        public ICommand BrowseOutputFolderCommand { get; }
+        public bool AnalyzeDatabase
+        {
+            get => _analyzeDatabase;
+            set
+            {
+                _analyzeDatabase = value;
+                OnPropertyChanged(nameof(AnalyzeDatabase));
+                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        public bool ProcessDrawing
+        {
+            get => _processDrawing;
+            set
+            {
+                _processDrawing = value;
+                OnPropertyChanged(nameof(ProcessDrawing));
+                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        public ICommand BrowseBowCommand { get; }
+        public ICommand BrowseDrawingsCommand { get; }
         public ICommand ProcessCommand { get; }
 
         public MainWindowViewModel()
         {
-            BrowseFileCommand = new RelayCommand(BrowseFile);
-            BrowseOutputFolderCommand = new RelayCommand(BrowseOutputFolder);
-            ProcessCommand = new RelayCommand(async () => await Process(), () => IsEnabled);
+            BrowseBowCommand = new RelayCommand(BrowseBow);
+            BrowseDrawingsCommand = new RelayCommand(BrowseDrawings);
+            ProcessCommand = new RelayCommand(async () => await Process(), () => IsEnabled && (ProcessBow || AnalyzeDatabase || ProcessDrawing));
         }
 
-        private void BrowseFile()
+        private void BrowseBow()
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.Filter = "All Files (*.*)|*.*";
+                openFileDialog.Title = "Select a bill of wire PDF binder";
+                openFileDialog.Filter = "PDF Files (*.pdf)|*.pdf";
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    AllFilePath = openFileDialog.FileName;
+                    BowPath = openFileDialog.FileName;
                 }
             }
         }
         
-        private void BrowseOutputFolder()
+        private void BrowseDrawings()
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                if (dialog.ShowDialog() == DialogResult.OK)
+                openFileDialog.Title = "Select a Drawings PDF binder";
+                openFileDialog.Filter = "PDF Files (*.pdf)|*.pdf";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    OutputFolderPath = dialog.SelectedPath;
+                    DrawingsPath = openFileDialog.FileName;
                 }
             }
         }
@@ -75,74 +129,104 @@ namespace PdfProcessor.ViewModels
         private async Task Process()
         {
             IsEnabled = false;
+            StatusMessage = "Processing started...";
             
-            if (string.IsNullOrEmpty(AllFilePath) || string.IsNullOrEmpty(OutputFolderPath))
+            if (string.IsNullOrEmpty(BowPath))
             {
-                System.Windows.MessageBox.Show("Please select a file and an output folder.");
+                StatusMessage = "Please select Bill of Wire PDF.";
                 IsEnabled = true;
                 return;
             }
-
-            await Task.Run(() =>
+            if (string.IsNullOrEmpty(DrawingsPath))
             {
-                DocumentType = "DWG";
-                
-                
-                //Extract text
-                PdfTextService _pdfTextService = new PdfTextService();
-                stopwatch = Stopwatch.StartNew();
-                List<PdfTextModel> extractedData = _pdfTextService.ExtractTextAndCoordinates(AllFilePath, DocumentType);
-                stopwatch.Stop();
-                Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
-                
-                //Save text in .csv and .db format
+                StatusMessage = "Please select Drawings PDF.";
+                IsEnabled = true;
+                return;
+            }
+            
+            if (ProcessBow)
+            {
+                documentType = "BOW";
+
+                // Extract text 
+                List<PdfTextModel> extractedBowData = await Task.Run(() =>
+                {
+                    PdfTextService pdfTextService = new PdfTextService();
+                    return pdfTextService.ExtractTextAndCoordinates(BowPath, documentType);
+                });
+
+                // Save text in CSV and DB format
                 ExportService exportService = new ExportService();
-                stopwatch = Stopwatch.StartNew();
-                exportService.SaveToCsv(extractedData, Path.Combine(OutputFolderPath, "data.csv"));
-                stopwatch.Stop();
-                Console.WriteLine($"SaveToCsv Time: {stopwatch.ElapsedMilliseconds} ms");
-                stopwatch = Stopwatch.StartNew();
-                exportService.SaveToDatabase(extractedData, Path.Combine(OutputFolderPath, "data.db"));
-                stopwatch.Stop();
-                Console.WriteLine($"SaveToDatabase Time: {stopwatch.ElapsedMilliseconds} ms");
-                
-                if (DocumentType == "TITLE")
+                exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
+                    Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
+                await exportService.SaveToDatabase(extractedBowData, 
+                    Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), documentType);
+
+                // Analyze the database
+                await Task.Run(() =>
                 {
-                    //Analyze the database for drawing title 
-                    DwgTitleService dwgTitleService = new DwgTitleService();
-                    stopwatch = Stopwatch.StartNew();
-                    dwgTitleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                    stopwatch.Stop();
-                    Console.WriteLine($"DwgTitleService Time: {stopwatch.ElapsedMilliseconds} ms");
-                }
-                else if (DocumentType == "BOW")
-                {
-                    //Analyze the database for cable schedule 
                     CableScheduleService cableScheduleService = new CableScheduleService();
-                    stopwatch = Stopwatch.StartNew();
-                    cableScheduleService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                    stopwatch.Stop();
-                    Console.WriteLine($"CableScheduleService Time: {stopwatch.ElapsedMilliseconds} ms");
-                }
-                else if (DocumentType == "DWG")
+                    cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                });
+
+                // Highlight the drawing
+                await Task.Run(() =>
                 {
-                    // //Analyze the database for drawing title
-                    // DrawingService drawingService = new DrawingService();
-                    // stopwatch = Stopwatch.StartNew();
-                    // drawingService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                    // stopwatch.Stop();
-                    // Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
-                }
+                    AnnotationService annotationService = new AnnotationService();
+                    annotationService.AnnotatePdf(BowPath, documentType);
+                });
+            }
+            if (AnalyzeDatabase)
+            {
                 
-                // Highlight Drawing 
-                AnnotationService annotationService = new AnnotationService();
-                stopwatch = Stopwatch.StartNew();
-                annotationService.AnnotatePdf(AllFilePath, OutputFolderPath, DocumentType);
-                stopwatch.Stop();
-                Console.WriteLine($"AnnotatePdf Time: {stopwatch.ElapsedMilliseconds} ms");
+
                 
-            });
-            System.Windows.MessageBox.Show($"Processing success!");
+            }
+            if (ProcessDrawing)
+            {
+                documentType = "TITLE";
+                // Extract text 
+                List<PdfTextModel> extractedTitleData = await Task.Run(() =>
+                {
+                    PdfTextService pdfTextService = new PdfTextService();
+                    return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
+                });
+                
+                documentType = "DWG";
+                // Save text in DB format
+                ExportService exportService = new ExportService();
+                await exportService.SaveToDatabase(extractedTitleData, 
+                    Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
+                
+                // Analyze the database
+                await Task.Run(() =>
+                {
+                    DwgTitleService dwgTitleService = new DwgTitleService();
+                    dwgTitleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
+                });
+                
+                // Extract text 
+                List<PdfTextModel> extractedDwgData = await Task.Run(() =>
+                {
+                    PdfTextService pdfTextService = new PdfTextService();
+                    return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
+                });
+                
+                // Save text in DB format
+                exportService = new ExportService();
+                await exportService.SaveToDatabase(extractedDwgData, 
+                    Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
+                
+                // Highlight the drawing
+                await Task.Run(() =>
+                {
+                    AnnotationService annotationService = new AnnotationService();
+                    annotationService.AnnotatePdf(DrawingsPath, documentType);
+                });
+                
+            }
+                
+            StatusMessage = "Processing success!";
             IsEnabled = true;
         }
         
@@ -155,8 +239,10 @@ namespace PdfProcessor.ViewModels
     }
     public class RelayCommand : ICommand
     {
-        private readonly Action _execute;
+        
         private readonly Func<bool> _canExecute;
+        private readonly Action _execute;
+        public event EventHandler CanExecuteChanged;
 
         public RelayCommand(Action execute, Func<bool> canExecute = null)
         {
@@ -166,6 +252,10 @@ namespace PdfProcessor.ViewModels
 
         public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
         public void Execute(object parameter) => _execute();
-        public event EventHandler CanExecuteChanged;
+        
+        public void RaiseCanExecuteChanged() 
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

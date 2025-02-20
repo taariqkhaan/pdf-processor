@@ -18,6 +18,7 @@ namespace PdfProcessor.Services
         private double dateY1 = 0;
         private string wordTag = "NA";
         private int itemNumber = 0;
+        private int colorFlag = 0;
         private bool dateFoundOnPage = false;
         
         
@@ -119,7 +120,8 @@ namespace PdfProcessor.Services
                         pageRotation,
                         wordRotation,
                         wordTag,
-                        itemNumber
+                        itemNumber,
+                        colorFlag
                     ));
                     
                 }

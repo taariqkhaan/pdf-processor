@@ -36,98 +36,110 @@ namespace PdfProcessor.Services
             }
         }
 
-        public void SaveToDatabase(List<PdfTextModel> extractedData, string databasePath)
+        public async Task SaveToDatabase(List<PdfTextModel> extractedData, string databasePath, string documentType)
         {
-            string connectionString = $"Data Source={databasePath};Version=3;";
+            
 
-            using (SQLiteConnection connection = new SQLiteConnection(connectionString))
+            await Task.Run(() =>
             {
-                connection.Open();
+                string tableName = documentType + "_table";
+                string connectionString = $"Data Source={databasePath};Version=3;";
 
-                // Create the table if it doesn't exist
-                string createTableQuery = @"
-                CREATE TABLE IF NOT EXISTS pdf_table (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Word TEXT NOT NULL,
-                    X1 REAL NOT NULL,
-                    Y1 REAL NOT NULL,
-                    X2 REAL NOT NULL,
-                    Y2 REAL NOT NULL,
-                    Sheet INTEGER NOT NULL,
-                    PageRotation INTEGER NOT NULL,
-                    WordRotation INTEGER NOT NULL,
-                    Tag TEXT NOT NULL,
-                    Item INTEGER NOT NULL                 
-                );";
-
-                using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))
+                using (SQLiteConnection connection = new SQLiteConnection(connectionString))
                 {
-                    command.ExecuteNonQuery();
-                }
+                    connection.Open();
 
-                // Insert extracted text and coordinates into the database
-                string insertQuery = @"INSERT INTO pdf_table 
-                                                   (Word, 
-                                                    X1, 
-                                                    Y1, 
-                                                    X2, 
-                                                    Y2,
-                                                    Sheet,
-                                                    PageRotation,
-                                                    WordRotation,
-                                                    Tag,
-                                                    Item
-                                                    ) 
-                                        VALUES (@PageWord, 
-                                                @BottomLeftX, 
-                                                @BottomLeftY, 
-                                                @TopRightX, 
-                                                @TopRightY,
-                                                @PageNumber,
-                                                @PageRotation,
-                                                @WordRotation,
-                                                @WordTag,
-                                                @ItemNumber
-                                                );";
+                    // Create the table if it doesn't exist
+                    string createTableQuery = $@"
+                    CREATE TABLE IF NOT EXISTS {tableName} (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Word TEXT NOT NULL,
+                        X1 REAL NOT NULL,
+                        Y1 REAL NOT NULL,
+                        X2 REAL NOT NULL,
+                        Y2 REAL NOT NULL,
+                        Sheet INTEGER NOT NULL,
+                        PageRotation INTEGER NOT NULL,
+                        WordRotation INTEGER NOT NULL,
+                        Tag TEXT NOT NULL,
+                        Item INTEGER NOT NULL,
+                        ColorFlag INTEGER NOT NULL               
+                    );";
 
-                using (SQLiteTransaction transaction = connection.BeginTransaction())
-                using (SQLiteCommand command = new SQLiteCommand(insertQuery, connection))
-                {
-                    command.Parameters.Add(new SQLiteParameter("@PageWord"));
-                    command.Parameters.Add(new SQLiteParameter("@BottomLeftX"));
-                    command.Parameters.Add(new SQLiteParameter("@BottomLeftY"));
-                    command.Parameters.Add(new SQLiteParameter("@TopRightX"));
-                    command.Parameters.Add(new SQLiteParameter("@TopRightY"));
-                    command.Parameters.Add(new SQLiteParameter("@PageNumber"));
-                    command.Parameters.Add(new SQLiteParameter("@PageRotation"));
-                    command.Parameters.Add(new SQLiteParameter("@WordRotation"));
-                    command.Parameters.Add(new SQLiteParameter("@WordTag"));
-                    command.Parameters.Add(new SQLiteParameter("@ItemNumber"));
-
-                    foreach (var data in extractedData)
+                    using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))
                     {
-                        command.Parameters["@PageWord"].Value = data.PageWord;
-                        command.Parameters["@BottomLeftX"].Value = data.BottomLeftX;
-                        command.Parameters["@BottomLeftY"].Value = data.BottomLeftY;
-                        command.Parameters["@TopRightX"].Value = data.TopRightX;
-                        command.Parameters["@TopRightY"].Value = data.TopRightY;
-                        command.Parameters["@PageNumber"].Value = data.PageNumber;
-                        command.Parameters["@PageRotation"].Value = data.PageRotation;
-                        command.Parameters["@WordRotation"].Value = data.WordRotation;
-                        command.Parameters["@WordTag"].Value = data.WordTag;
-                        command.Parameters["@ItemNumber"].Value = data.ItemNumber;
                         command.ExecuteNonQuery();
                     }
 
-                    transaction.Commit();
+                    // Insert extracted text and coordinates into the database
+                    string insertQuery = $@"INSERT INTO {tableName} 
+                                                       (Word, 
+                                                        X1, 
+                                                        Y1, 
+                                                        X2, 
+                                                        Y2,
+                                                        Sheet,
+                                                        PageRotation,
+                                                        WordRotation,
+                                                        Tag,
+                                                        Item,
+                                                        ColorFlag
+                                                        ) 
+                                            VALUES (@PageWord, 
+                                                    @BottomLeftX, 
+                                                    @BottomLeftY, 
+                                                    @TopRightX, 
+                                                    @TopRightY,
+                                                    @PageNumber,
+                                                    @PageRotation,
+                                                    @WordRotation,
+                                                    @WordTag,
+                                                    @ItemNumber,
+                                                    @ColorFlag
+                                                    );";
+
+                    using (SQLiteTransaction transaction = connection.BeginTransaction())
+                    using (SQLiteCommand command = new SQLiteCommand(insertQuery, connection))
+                    {
+                        command.Parameters.Add(new SQLiteParameter("@PageWord"));
+                        command.Parameters.Add(new SQLiteParameter("@BottomLeftX"));
+                        command.Parameters.Add(new SQLiteParameter("@BottomLeftY"));
+                        command.Parameters.Add(new SQLiteParameter("@TopRightX"));
+                        command.Parameters.Add(new SQLiteParameter("@TopRightY"));
+                        command.Parameters.Add(new SQLiteParameter("@PageNumber"));
+                        command.Parameters.Add(new SQLiteParameter("@PageRotation"));
+                        command.Parameters.Add(new SQLiteParameter("@WordRotation"));
+                        command.Parameters.Add(new SQLiteParameter("@WordTag"));
+                        command.Parameters.Add(new SQLiteParameter("@ItemNumber"));
+                        command.Parameters.Add(new SQLiteParameter("@ColorFlag"));
+
+                        foreach (var data in extractedData)
+                        {
+                            command.Parameters["@PageWord"].Value = data.PageWord;
+                            command.Parameters["@BottomLeftX"].Value = data.BottomLeftX;
+                            command.Parameters["@BottomLeftY"].Value = data.BottomLeftY;
+                            command.Parameters["@TopRightX"].Value = data.TopRightX;
+                            command.Parameters["@TopRightY"].Value = data.TopRightY;
+                            command.Parameters["@PageNumber"].Value = data.PageNumber;
+                            command.Parameters["@PageRotation"].Value = data.PageRotation;
+                            command.Parameters["@WordRotation"].Value = data.WordRotation;
+                            command.Parameters["@WordTag"].Value = data.WordTag;
+                            command.Parameters["@ItemNumber"].Value = data.ItemNumber;
+                            command.Parameters["@ColorFlag"].Value = data.ColorFlag;
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    
+                    var deleteQuery = $@"DELETE FROM {tableName} WHERE Word IS NULL OR TRIM(Word) = '';";
+                    using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, connection))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
                 }
-                
-                // var deleteQuery = "DELETE FROM pdf_table WHERE Text IS NULL OR TRIM(Text) = '';";
-                // using (SQLiteCommand cmd = new SQLiteCommand(deleteQuery, connection))
-                // {
-                //     cmd.ExecuteNonQuery();
-                // }
-            }
+            });
+
         }
     }
 }
