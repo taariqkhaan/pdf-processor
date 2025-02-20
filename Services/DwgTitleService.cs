@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.IO;
+using PdfProcessor.Models;
 
 namespace PdfProcessor.Services;
 
@@ -261,14 +262,4 @@ public class DwgTitleService
         }
 
     }
-
-public static class RangeExtensions
-{
-    public static bool IsBetween(this double value, double min, double max)
-    {
-        return value > min && value < max;
-    }
-}
-    
-
     

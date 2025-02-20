@@ -115,7 +115,7 @@ public class AnnotationService
                     rectHeight = newY2 - newY1;
                 }
                 
-                annotationRect = new Rectangle((float)newX1, (float)newY1, (float)rectWidth, (float)rectHeight);
+                annotationRect = new Rectangle((float)newX1 - 1, (float)newY1 - 1, (float)rectWidth + 2, (float)rectHeight + 2);
                 
                 bool missingValue = string.IsNullOrWhiteSpace(wordValue);
                 float opacity = 0.6f;
@@ -127,7 +127,7 @@ public class AnnotationService
                 annotation.SetInteriorColor(new PdfArray(interiorColor));
                 annotation.SetTitle(new PdfString("Annotation"));
                 annotation.SetContents(missingValue ? tagValue + "?" : tagValue);
-                annotation.SetBorder(new PdfArray(new float[] { 1, 1, 1 }));
+                annotation.SetBorder(new PdfArray(new float[] { 0.1f, 0.1f, 0.1f }));
                 
                 annotation.Put(PdfName.CA, new PdfNumber(opacity)); // Opacity (40%)
                 
@@ -165,8 +165,8 @@ public class AnnotationService
                     bottomLeftY -= 2.5;
                 if ("-+=".Contains(lastChar))
                     topRightY += 4;
-                if ("`'\"".Contains(firstChar))
-                    bottomLeftY -= 5;
+                if ("^`'\"".Contains(firstChar))
+                    bottomLeftY -= 2;
                 break;
         
             case 90:
@@ -178,7 +178,7 @@ public class AnnotationService
                     bottomLeftX -= 2.5;
                 if ("-+=".Contains(lastChar))
                     topRightX += 4;
-                if ("`'\"".Contains(firstChar))
+                if ("^`'\"".Contains(firstChar))
                     bottomLeftX -= 5;
                 break;
         
@@ -191,8 +191,25 @@ public class AnnotationService
                     topRightY += 4;
                 if ("-+=".Contains(lastChar))
                     bottomLeftY -= 5;
-                if ("`'\"".Contains(firstChar))
+                if ("^`'\"".Contains(firstChar))
                     topRightY += 4;
+                break;
+            
+            case 270:
+                bottomLeftX += 2;
+                topRightX -= 2;
+
+                if (".,_".Contains(firstChar))
+                    bottomLeftX += 2;
+
+                if (".,_".Contains(lastChar))
+                    topRightX -= 4;
+
+                if ("-+=".Contains(lastChar))
+                    topRightX -= 7;
+
+                if ("^`'\"".Contains(firstChar))
+                    bottomLeftX += 10;
                 break;
         }
         return (bottomLeftX, bottomLeftY, topRightX, topRightY);

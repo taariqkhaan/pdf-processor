@@ -85,7 +85,7 @@ namespace PdfProcessor.ViewModels
 
             await Task.Run(() =>
             {
-                DocumentType = "TITLE";
+                DocumentType = "DWG";
                 
                 
                 //Extract text
@@ -126,12 +126,12 @@ namespace PdfProcessor.ViewModels
                 }
                 else if (DocumentType == "DWG")
                 {
-                    //Analyze the database for drawing title
-                    DrawingService drawingService = new DrawingService();
-                    stopwatch = Stopwatch.StartNew();
-                    drawingService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
-                    stopwatch.Stop();
-                    Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
+                    // //Analyze the database for drawing title
+                    // DrawingService drawingService = new DrawingService();
+                    // stopwatch = Stopwatch.StartNew();
+                    // drawingService.ProcessDatabase(Path.Combine(OutputFolderPath, "data.db"));
+                    // stopwatch.Stop();
+                    // Console.WriteLine($"DrawingService Time: {stopwatch.ElapsedMilliseconds} ms");
                 }
                 
                 // Highlight Drawing 

@@ -17,11 +17,16 @@ namespace PdfProcessor.Services
             return new PdfRectangle(x1_min, y1_min + 10, pageWidth - x1_min, y2_max - 85);
         }
         
-        // Gets search region for Southern Company Drawing
+        // Gets search region for Southern Company Drawing Title
         public PdfRectangle GetDwgTitleRegion(double pageWidth, double pageHeight, int pageRotation, double x1_min, double y1_min, double y2_max)
         {
             return new PdfRectangle(pageWidth - 485, 0, pageWidth, 110);
                 
+        }
+        // Gets search region for Southern Company Drawing
+        public PdfRectangle GetDwgRegion(double pageWidth, double pageHeight, int pageRotation, double x1_min, double y1_min, double y2_max)
+        {
+            return new PdfRectangle(0, 95, pageWidth, pageHeight);
         }
         
         // Method to get a function reference based on user input
@@ -31,7 +36,8 @@ namespace PdfProcessor.Services
             {
                 { "FULL", GetFullPageRegion },
                 { "BOW", GetBowRegion },
-                { "TITLE", GetDwgTitleRegion }
+                { "TITLE", GetDwgTitleRegion },
+                { "DWG", GetDwgRegion }
             };
 
             if (regionMap.TryGetValue(regionName, out var regionFunc))

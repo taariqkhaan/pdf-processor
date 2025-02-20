@@ -72,6 +72,7 @@ namespace PdfProcessor.Services
                 {
                     var firstChar = word.Letters.First();
                     var lastChar = word.Letters.Last();
+                    
 
                     bottomLeftX = firstChar.GlyphRectangle.BottomLeft.X;
                     bottomLeftY = firstChar.GlyphRectangle.BottomLeft.Y;
