@@ -157,8 +157,8 @@ namespace PdfProcessor.ViewModels
 
                 // Save text in CSV and DB format
                 ExportService exportService = new ExportService();
-                exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
-                    Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
+                // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
+                //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
                 await exportService.SaveToDatabase(extractedBowData, 
                     Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), documentType);
 
@@ -170,16 +170,17 @@ namespace PdfProcessor.ViewModels
                 });
 
                 // Highlight the drawing
-                await Task.Run(() =>
-                {
-                    AnnotationService annotationService = new AnnotationService();
-                    annotationService.AnnotatePdf(BowPath, documentType);
-                });
+                // await Task.Run(() =>
+                // {
+                //     AnnotationService annotationService = new AnnotationService();
+                //     annotationService.AnnotatePdf(BowPath, documentType);
+                // });
             }
             if (AnalyzeDatabase)
             {
                 
-
+                ComparisonLogic comparisonLogic = new ComparisonLogic();
+                comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
             }
             if (ProcessDrawing)
@@ -217,12 +218,19 @@ namespace PdfProcessor.ViewModels
                 await exportService.SaveToDatabase(extractedDwgData, 
                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
                 
-                // Highlight the drawing
+                // Analyze the database
                 await Task.Run(() =>
                 {
-                    AnnotationService annotationService = new AnnotationService();
-                    annotationService.AnnotatePdf(DrawingsPath, documentType);
+                    DrawingService drawingService = new DrawingService();
+                    drawingService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
                 });
+                
+                // Highlight the drawing
+                // await Task.Run(() =>
+                // {
+                //     AnnotationService annotationService = new AnnotationService();
+                //     annotationService.AnnotatePdf(DrawingsPath, documentType);
+                // });
                 
             }
                 
