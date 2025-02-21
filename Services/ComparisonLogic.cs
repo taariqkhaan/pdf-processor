@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.IO;
+using System.Data;
 using PdfProcessor.Models;
 
 
@@ -20,10 +21,10 @@ public class ComparisonLogic
             using (var connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
             {
                 connection.Open();
-                AnalyzeBowTable(connection);
-                
-                //DeleteNullRows(connection);
-                //UpdateColorFlag(connection);
+                List<DwgEntry> dwgData = GetDwgEntries(connection);
+                List<BowEntry> bowData = GetBowEntries(connection);
+                CheckReferences(dwgData, bowData);
+                UpdateDatabase(connection, dwgData, bowData);
             }
         }
         catch (Exception ex)
@@ -31,124 +32,324 @@ public class ComparisonLogic
             Console.WriteLine($"Error processing database: {ex.Message}");
         }
     }
-
-    private void AnalyzeBowTable(SQLiteConnection connection)
+    private void CheckReferences(List<DwgEntry> dwgData, List<BowEntry> bowData)
     {
-        string selectQuery = @"
-            SELECT rowid, Word, Sheet, Tag, Item
-            FROM BOW_table
-            ORDER BY Item;";
-
-        string fromRefValue = null;
-        string toRefValue = null;
-        
-        using (var cmd = new SQLiteCommand(selectQuery, connection))
-        using (var reader = cmd.ExecuteReader())
+        foreach (BowEntry bowEntry in bowData)
         {
-            using (var transaction = connection.BeginTransaction())
-            using (var updateCmd = new SQLiteCommand(@"UPDATE BOW_table 
-                                                       SET ColorFlag = @ColorFlag
-                                                       WHERE rowid = @RowId;", connection, transaction))
+            int fromRefCount = 0;
+            int toRefCount = 0;
+            int matchesFound = 0;
+            
+            foreach (DwgEntry dwgEntry in dwgData)
             {
-                updateCmd.Parameters.Add(new SQLiteParameter("@ColorFlag"));
-                updateCmd.Parameters.Add(new SQLiteParameter("@RowId"));
-
-                while (reader.Read())
+                if (dwgEntry.CableTag == bowEntry.CableTag)
                 {
-                    int rowId = reader.GetInt32(0);
-                    string wordValue = reader.IsDBNull(1) ? string.Empty : reader.GetString(1).Trim();
-                    int sheetNumber = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
-                    string tagValue = reader.IsDBNull(3) ? string.Empty : reader.GetString(3).Trim();
-                    int itemNumber = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
-
-
-                    if (tagValue == "cable_tag")
-                    {
-                        // Fetch wordValue for "from_ref" and "to_ref" with the same Item
-                        fromRefValue = GetWordValueByTag(connection, itemNumber, "from_ref").Replace("(", "").Replace(")", "");
-                        toRefValue = GetWordValueByTag(connection, itemNumber, "to_ref").Replace("(", "").Replace(")", "");
-                        
-                        AnalyzeDwgTable(connection, wordValue);
-                    }
+                    matchesFound++;
                     
+                    if (dwgEntry.DwgRef == bowEntry.FromRef)
+                    {
+                        dwgEntry.CableTagColorFlag = 1;
+                        fromRefCount ++;
+                    }
+                    else if (dwgEntry.DwgRef == bowEntry.ToRef)
+                    {
+                        dwgEntry.CableTagColorFlag = 1;
+                        toRefCount ++;
+                    }
+                    else
+                    {
+                        dwgEntry.CableTagColorFlag = 3;
+                    }
+                }
+            }
+            
+            if (matchesFound == 2)
+            {
+                bowEntry.CableTagColorFlag = 1;
+                
+                if (fromRefCount == 0)
+                {
+                    bowEntry.FromRefColorFlag = 3;
+                }
+                if (toRefCount == 0)
+                {
+                    bowEntry.ToRefColorFlag = 3;
+                }
+                if (fromRefCount == 1 && toRefCount == 1)
+                {
+                    bowEntry.FromRefColorFlag = 1;
+                    bowEntry.ToRefColorFlag = 1;
                 }
                 
-                transaction.Commit();
-            }
-        }
-    }
-    
-    private void AnalyzeDwgTable(SQLiteConnection connection, string bowWordValue)
-    {
-        string selectQuery = @"
-        SELECT Sheet
-        FROM DWG_table
-        WHERE Word = @BowWordValue;";
-
-        using (var cmd = new SQLiteCommand(selectQuery, connection))
-        {
-            cmd.Parameters.AddWithValue("@BowWordValue", bowWordValue);
-
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
+                if (fromRefCount > 1)
                 {
-                    int sheetNumber = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
-                    Console.WriteLine($"{bowWordValue}, {sheetNumber}");
-                    
-                    string selectWordQuery = @"
-                        SELECT GROUP_CONCAT(Word, '-') as ConcatenatedWords
-                        FROM (
-                            SELECT Word
-                            FROM DWG_table
-                            WHERE Sheet = @SheetNumber 
-                              AND Tag IN ('dwg_size', 'dwg_number', 'dwg_sheet')
-                            ORDER BY 
-                                CASE Tag 
-                                    WHEN 'dwg_size' THEN 1
-                                    WHEN 'dwg_number' THEN 2
-                                    WHEN 'dwg_sheet' THEN 3
-                                END
-                        ) AS OrderedWords;";
-
-                    using (var wordCmd = new SQLiteCommand(selectWordQuery, connection))
-                    {
-                        wordCmd.Parameters.AddWithValue("@SheetNumber", sheetNumber);
-
-                        using (var wordReader = wordCmd.ExecuteReader())
-                        {
-                            while (wordReader.Read())
-                            {
-                                string concatenatedWords = wordReader.IsDBNull(0) ? "NULL" : wordReader.GetString(0);
-                                Console.WriteLine($" {concatenatedWords}");
-                                break;
-                            }
-                            
-                            
-                        }
-                    }
+                    bowEntry.FromRefColorFlag = 4;
+                }
+                if (toRefCount > 1)
+                {
+                    bowEntry.ToRefColorFlag = 4;
                 }
             }
+            if (matchesFound > 2)
+            {
+                bowEntry.CableTagColorFlag = 1;
+                
+                if (fromRefCount == 0)
+                {
+                    bowEntry.FromRefColorFlag = 3;
+                }
+                if (toRefCount == 0)
+                {
+                    bowEntry.ToRefColorFlag = 3;
+                }
+                if (fromRefCount == 1 && toRefCount == 1)
+                {
+                    bowEntry.FromRefColorFlag = 1;
+                    bowEntry.ToRefColorFlag = 1;
+                }
+                if (fromRefCount > 1)
+                {
+                    bowEntry.FromRefColorFlag = 4;
+                }
+                if (toRefCount > 1)
+                {
+                    bowEntry.ToRefColorFlag = 4;
+                }
+            }
+            
+            else
+            {
+                bowEntry.CableTagColorFlag = 3;
+            }
+            
         }
+        
     }
-
-    
-    private string GetWordValueByTag(SQLiteConnection connection, int itemNumber, string tagType)
+    private List<DwgEntry> GetDwgEntries(SQLiteConnection connection)
     {
-        string query = @"
-                        SELECT Word 
-                        FROM BOW_table 
-                        WHERE Item = @ItemNumber AND Tag = @TagType 
-                        LIMIT 1;"; // Assuming there's only one matching entry per item
+        int currentSheet = -1;
+        int currentItem = -1;
+        string currentCableTag = null;
+        string currentFromRef = null;
+        string currentToRef = null;
+        string currentDwgRef = null;
+        
+        // Fetch DWG_table data
+        var dwgQuery = @"SELECT Word, Sheet, Tag, ColorFlag FROM DWG_table ORDER BY Sheet, Tag DESC";
+        List<DwgEntry> dwgData = new List<DwgEntry>();
 
-        using (var cmd = new SQLiteCommand(query, connection))
+        using (var cmd = new SQLiteCommand(dwgQuery, connection))
+        using (var reader = cmd.ExecuteReader())
         {
-            cmd.Parameters.AddWithValue("@ItemNumber", itemNumber);
-            cmd.Parameters.AddWithValue("@TagType", tagType);
+            while (reader.Read())
+            {
+                if (Convert.ToInt32(reader["ColorFlag"]) != 0)
+                    continue;
 
-            object result = cmd.ExecuteScalar();
-            return result != null ? result.ToString().Trim() : string.Empty;
+                int sheet = Convert.ToInt32(reader["Sheet"]);
+                string tag = reader["Tag"].ToString();
+                string word = reader["Word"].ToString();
+
+
+                // If we move to a new sheet, save the previous entry
+                if (sheet != currentSheet)
+                {
+                    currentSheet = sheet;
+                    currentCableTag = null;
+                    currentDwgRef = null;
+                }
+
+                if (tag == "full_dwg_number")
+                {
+                    currentDwgRef = word;
+                    continue;
+                }
+
+                if (tag == "cable_tag")
+                {
+                    currentCableTag = word;
+
+                    dwgData.Add(new DwgEntry
+                    {
+                        CableTag = currentCableTag,
+                        DwgRef = currentDwgRef,
+                        Sheet = currentSheet,
+                        CableTagColorFlag = 0
+                    });
+                }
+
+            }
+        }
+        return dwgData;
+    }
+    private List<BowEntry> GetBowEntries(SQLiteConnection connection)
+    {
+        int currentSheet = -1;
+        int currentItem = -1;
+        string currentCableTag = null;
+        string currentFromRef = null;
+        string currentToRef = null;
+        string currentDwgRef = null;
+        
+
+        // Fetch BOW_table data
+        string bowQuery = @"SELECT Word, Sheet, Tag, Item, ColorFlag FROM BOW_table ORDER BY Sheet, Item";
+        List<BowEntry> bowData = new List<BowEntry>();
+        
+        using (var cmd = new SQLiteCommand(bowQuery, connection))
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                if (Convert.ToInt32(reader["ColorFlag"]) != 0) 
+                    continue;
+        
+                int sheet = Convert.ToInt32(reader["Sheet"]);
+                int item = Convert.ToInt32(reader["Item"]);
+                string tag = reader["Tag"].ToString();
+                string word = reader["Word"].ToString();
+        
+                // If we move to a new sheet or item, save the previous entry
+                if (sheet != currentSheet || item != currentItem)
+                {
+                    if (currentSheet != -1) // Avoid saving empty first iteration
+                    {
+                        bowData.Add(new BowEntry
+                        {
+                            CableTag = currentCableTag,
+                            FromRef = currentFromRef,
+                            ToRef = currentToRef,
+                            Sheet = currentSheet,
+                            Item = currentItem,
+                            CableTagColorFlag = 0,
+                            FromRefColorFlag = 0,
+                            ToRefColorFlag = 0
+                        });
+                    }
+        
+                    // Update tracking variables
+                    currentSheet = sheet;
+                    currentItem = item;
+                    currentCableTag = null;
+                    currentFromRef = null;
+                    currentToRef = null;
+                }
+        
+                // Assign values based on tag type
+                switch (tag)
+                {
+                    case "cable_tag":
+                        currentCableTag = word;
+                        break;
+                    case "from_ref":
+                        currentFromRef = word.Replace("(", "").Replace(")", "");
+                        break;
+                    case "to_ref":
+                        currentToRef = word.Replace("(", "").Replace(")", "");
+                        break;
+                }
+            }
+        
+            // Add last entry after loop ends
+            if (currentSheet != -1)
+            {
+                bowData.Add(new BowEntry
+                {
+                    CableTag = currentCableTag,
+                    FromRef = currentFromRef,
+                    ToRef = currentToRef,
+                    Sheet = currentSheet,
+                    Item = currentItem,
+                    CableTagColorFlag = 0,
+                    FromRefColorFlag = 0,
+                    ToRefColorFlag = 0
+                });
+                
+            }
+        }
+        return bowData;
+    }
+    private void UpdateDatabase(SQLiteConnection connection, List<DwgEntry> dwgData, List<BowEntry> bowData)
+    {
+        using (var transaction = connection.BeginTransaction())
+        {
+            try
+            {
+                using (var cmd = new SQLiteCommand(connection))
+                {
+                    // Update DWG_table
+                    cmd.CommandText = @"UPDATE DWG_table SET ColorFlag = @ColorFlag WHERE Sheet = @Sheet AND Tag = 'cable_tag' AND Word = @CableTag";
+                    cmd.Parameters.Add(new SQLiteParameter("@ColorFlag"));
+                    cmd.Parameters.Add(new SQLiteParameter("@Sheet"));
+                    cmd.Parameters.Add(new SQLiteParameter("@CableTag"));
+
+                    foreach (var dwgEntry in dwgData)
+                    {
+                        cmd.Parameters["@ColorFlag"].Value = dwgEntry.CableTagColorFlag;
+                        cmd.Parameters["@Sheet"].Value = dwgEntry.Sheet;
+                        cmd.Parameters["@CableTag"].Value = dwgEntry.CableTag;
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // Update BOW_table
+                    cmd.CommandText = @"UPDATE BOW_table SET ColorFlag = @ColorFlag WHERE Sheet = @Sheet AND Item = @Item AND Tag = @Tag AND Word IS NOT NULL AND Word <> '';";
+                    cmd.Parameters.Clear();
+                    cmd.Parameters.Add(new SQLiteParameter("@ColorFlag"));
+                    cmd.Parameters.Add(new SQLiteParameter("@Sheet"));
+                    cmd.Parameters.Add(new SQLiteParameter("@Item"));
+                    cmd.Parameters.Add(new SQLiteParameter("@Tag"));
+
+                    foreach (var bowEntry in bowData)
+                    {
+                        // Update CableTag ColorFlag
+                        cmd.Parameters["@ColorFlag"].Value = bowEntry.CableTagColorFlag;
+                        cmd.Parameters["@Sheet"].Value = bowEntry.Sheet;
+                        cmd.Parameters["@Item"].Value = bowEntry.Item;
+                        cmd.Parameters["@Tag"].Value = "cable_tag";
+                        cmd.ExecuteNonQuery();
+
+                        // Update FromRef ColorFlag
+                        cmd.Parameters["@ColorFlag"].Value = bowEntry.FromRefColorFlag;
+                        cmd.Parameters["@Sheet"].Value = bowEntry.Sheet;
+                        cmd.Parameters["@Item"].Value = bowEntry.Item;
+                        cmd.Parameters["@Tag"].Value = "from_ref";
+                        cmd.ExecuteNonQuery();
+
+                        // Update ToRef ColorFlag
+                        cmd.Parameters["@ColorFlag"].Value = bowEntry.ToRefColorFlag;
+                        cmd.Parameters["@Sheet"].Value = bowEntry.Sheet;
+                        cmd.Parameters["@Item"].Value = bowEntry.Item;
+                        cmd.Parameters["@Tag"].Value = "to_ref";
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                transaction.Commit();
+                Console.WriteLine("Database updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"Error updating database: {ex.Message}");
+            }
         }
     }
-    
+}  
+
+public class BowEntry
+{
+    public string CableTag { get; set; }
+    public string FromRef { get; set; }
+    public string ToRef { get; set; }
+    public int Sheet { get; set; }
+    public int Item { get; set; }
+    public int CableTagColorFlag { get; set; }
+    public int FromRefColorFlag { get; set; }
+    public int ToRefColorFlag { get; set; }
+}
+public class DwgEntry
+{
+    public string CableTag { get; set; }
+    public string DwgRef { get; set; }
+    public int Sheet { get; set; }
+    public int CableTagColorFlag { get; set; }
 }

@@ -220,10 +220,41 @@ Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
 
 
 -------------------------------------------------------------------------------------------------------------
-select Word,
-sort the BOW_table by sheet asc, item asc, tag
-group by word value is pres
+the database contains two tables: BOW_table and DWG_table.
 
+Both BOW_table and DWG_table have following columns:
+Id, Word, X1, Y1, X2, Y2, Sheet, PageRotation, WordRotation, Tag, Item, ColorFlag
+
+BOW_table and DWG_table data are extracted from two separate PDFs.
+
+
+BOW_table
+select [Word, Sheet, Tag, Item]
+order by Sheet, Item
+
+DWG_table
+[Word, Sheet, Tag]
+order by Sheet
+
+
+
+in BOW_table and DWG_table, iterate through all Tag = 'cable_tag', 
+if ColorFlag ==0 , then check
+if Word value matches in both tables
+
+==> using [Sheet, Item] extract Word value of Tag='to_ref' from BOW_table
+==> using [Sheet] extract Word value of Tag= 'full_dwg_number' from DWG_table
+
+if match is found, set ColorFlag of corresponding to_ref in BOW_table to 1.
+and ColorFlag of 'cable_tag' in DWG_table to 1.
+if match is not found, set both to 3.
+
+==> using [Sheet, Item] extract Word value of Tag='from_ref' from BOW_table
+==> using [Sheet] extract Word value of Tag= 'full_dwg_number' from DWG_table
+
+if match is found, set ColorFlag of corresponding from_ref in BOW_table to 1.
+and ColorFlag of 'cable_tag' in DWG_table to 1.
+if match is not found, set both to 3.
 
 
 

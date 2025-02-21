@@ -131,9 +131,17 @@ public class AnnotationService
                     {
                         colorComponents = new [] { 1f, 0.9f, 0f };
                     }
-                    else if (colorFlag == 2) // Missing: Red
+                    else if (colorFlag == 2) // Missing Value: Red
                     {
                         colorComponents = new [] { 1f, 0f, 0f };
+                    }
+                    else if (colorFlag == 3) // Not found: magenta
+                    {
+                        colorComponents = new [] { 1f, 0f, 1f };
+                    }
+                    else if (colorFlag == 4) // More than 2 instances found: cyan
+                    {
+                        colorComponents = new [] { 0.28f, 0.82f, 0.8f };
                     }
                     
                     PdfSquareAnnotation annotation = new PdfSquareAnnotation(annotationRect);

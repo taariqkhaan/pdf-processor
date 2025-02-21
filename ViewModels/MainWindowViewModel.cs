@@ -176,13 +176,6 @@ namespace PdfProcessor.ViewModels
                 //     annotationService.AnnotatePdf(BowPath, documentType);
                 // });
             }
-            if (AnalyzeDatabase)
-            {
-                
-                ComparisonLogic comparisonLogic = new ComparisonLogic();
-                comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                
-            }
             if (ProcessDrawing)
             {
                 documentType = "TITLE";
@@ -225,13 +218,18 @@ namespace PdfProcessor.ViewModels
                     drawingService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
                 });
                 
-                // Highlight the drawing
-                // await Task.Run(() =>
-                // {
-                //     AnnotationService annotationService = new AnnotationService();
-                //     annotationService.AnnotatePdf(DrawingsPath, documentType);
-                // });
                 
+            }
+            if (AnalyzeDatabase)
+            {
+                
+                ComparisonLogic comparisonLogic = new ComparisonLogic();
+                comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+
+                //Highlight the drawing
+                 AnnotationService annotationService = new AnnotationService();
+                 annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                 annotationService.AnnotatePdf(BowPath, "BOW");
             }
                 
             StatusMessage = "Processing success!";
