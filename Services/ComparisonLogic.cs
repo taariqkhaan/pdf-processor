@@ -33,98 +33,153 @@ public class ComparisonLogic
         }
     }
     private void CheckReferences(List<DwgEntry> dwgData, List<BowEntry> bowData)
-    {
-        foreach (BowEntry bowEntry in bowData)
-        {
-            int fromRefCount = 0;
-            int toRefCount = 0;
-            int matchesFound = 0;
-            
-            foreach (DwgEntry dwgEntry in dwgData)
-            {
-                if (dwgEntry.CableTag == bowEntry.CableTag)
-                {
-                    matchesFound++;
-                    
-                    if (dwgEntry.DwgRef == bowEntry.FromRef)
-                    {
-                        dwgEntry.CableTagColorFlag = 1;
-                        fromRefCount ++;
-                    }
-                    else if (dwgEntry.DwgRef == bowEntry.ToRef)
-                    {
-                        dwgEntry.CableTagColorFlag = 1;
-                        toRefCount ++;
-                    }
-                    else
-                    {
-                        dwgEntry.CableTagColorFlag = 3;
-                    }
-                }
-            }
-            
-            if (matchesFound == 2)
-            {
-                bowEntry.CableTagColorFlag = 1;
-                
-                if (fromRefCount == 0)
-                {
-                    bowEntry.FromRefColorFlag = 3;
-                }
-                if (toRefCount == 0)
-                {
-                    bowEntry.ToRefColorFlag = 3;
-                }
-                if (fromRefCount == 1 && toRefCount == 1)
-                {
-                    bowEntry.FromRefColorFlag = 1;
-                    bowEntry.ToRefColorFlag = 1;
-                }
-                
-                if (fromRefCount > 1)
-                {
-                    bowEntry.FromRefColorFlag = 4;
-                }
-                if (toRefCount > 1)
-                {
-                    bowEntry.ToRefColorFlag = 4;
-                }
-            }
-            if (matchesFound > 2)
-            {
-                bowEntry.CableTagColorFlag = 1;
-                
-                if (fromRefCount == 0)
-                {
-                    bowEntry.FromRefColorFlag = 3;
-                }
-                if (toRefCount == 0)
-                {
-                    bowEntry.ToRefColorFlag = 3;
-                }
-                if (fromRefCount == 1 && toRefCount == 1)
-                {
-                    bowEntry.FromRefColorFlag = 1;
-                    bowEntry.ToRefColorFlag = 1;
-                }
-                if (fromRefCount > 1)
-                {
-                    bowEntry.FromRefColorFlag = 4;
-                }
-                if (toRefCount > 1)
-                {
-                    bowEntry.ToRefColorFlag = 4;
-                }
-            }
-            
-            else
-            {
-                bowEntry.CableTagColorFlag = 3;
-            }
-            
-        }
-        
-    }
+         {
+             foreach (BowEntry bowEntry in bowData)
+             {
+                 int fromRefCount = 0;
+                 int toRefCount = 0;
+                 int matchesFound = 0;
+                 
+                 foreach (DwgEntry dwgEntry in dwgData)
+                 {
+                     if (dwgEntry.CableTag == bowEntry.CableTag)
+                     {
+                         matchesFound++;
+                         
+                         if (dwgEntry.DwgRef == bowEntry.FromRef)
+                         {
+                             dwgEntry.CableTagColorFlag = 1;
+                             fromRefCount ++;
+                         }
+                         else if (dwgEntry.DwgRef == bowEntry.ToRef)
+                         {
+                             dwgEntry.CableTagColorFlag = 1;
+                             toRefCount ++;
+                         }
+                         else
+                         {
+                             dwgEntry.CableTagColorFlag = 4;
+                         }
+                     }
+                 }
+                 
+                 if (matchesFound == 0)
+                 {
+                     bowEntry.CableTagColorFlag = 3;
+                     bowEntry.FromRefColorFlag = 3;
+                     bowEntry.ToRefColorFlag = 3;
+                   
+                 }
+                 if (matchesFound == 1)
+                 {
+                     bowEntry.CableTagColorFlag = 1;
+                     
+                     if (fromRefCount == 1 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 1;
+                         bowEntry.ToRefColorFlag = 3;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 1)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 1;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 3;
+                     }
+                     
+                 }
+                 if (matchesFound == 2)
+                 {
+                     bowEntry.CableTagColorFlag = 1;
+                     
+                     if (fromRefCount == 1 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 1;
+                         bowEntry.ToRefColorFlag = 3;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 1)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 1;
+                     }
+                     if (fromRefCount == 1 && toRefCount == 1)
+                     {
+                         bowEntry.FromRefColorFlag = 1;
+                         bowEntry.ToRefColorFlag = 1;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 3;
+                     }
+                     if (fromRefCount == 2 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 4;
+                         bowEntry.ToRefColorFlag = 3;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 2)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 4;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     
+                 }
+                 if (matchesFound > 2)
+                 {
+                     if (fromRefCount == 1 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 1;
+                         bowEntry.ToRefColorFlag = 3;
+                         bowEntry.CableTagColorFlag = 1;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 1)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 1;
+                         bowEntry.CableTagColorFlag = 1;
+                     }
+                     if (fromRefCount == 1 && toRefCount == 1)
+                     {
+                         bowEntry.FromRefColorFlag = 1;
+                         bowEntry.ToRefColorFlag = 1;
+                         bowEntry.CableTagColorFlag = 1;
+                     }
+                     if (fromRefCount == 0 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 3;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     if (fromRefCount >= 2 && toRefCount == 0)
+                     {
+                         bowEntry.FromRefColorFlag = 4;
+                         bowEntry.ToRefColorFlag = 3;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     if (fromRefCount == 0 && toRefCount >= 2)
+                     {
+                         bowEntry.FromRefColorFlag = 3;
+                         bowEntry.ToRefColorFlag = 4;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     if (fromRefCount >= 2 && toRefCount >= 2)
+                     {
+                         bowEntry.FromRefColorFlag = 4;
+                         bowEntry.ToRefColorFlag = 4;
+                         bowEntry.CableTagColorFlag = 4;
+                     }
+                     
+                 }
+                 
+                 
+             }
+             
+         }
     private List<DwgEntry> GetDwgEntries(SQLiteConnection connection)
     {
         int currentSheet = -1;
