@@ -58,7 +58,7 @@ public class ComparisonLogic
                          }
                          else
                          {
-                             dwgEntry.CableTagColorFlag = 4;
+                             dwgEntry.CableTagColorFlag = 3;
                          }
                      }
                  }

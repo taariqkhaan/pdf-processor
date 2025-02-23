@@ -247,7 +247,7 @@ namespace PdfProcessor.ViewModels
             {
                 
                 HyperlinkService hyperlinkService = new HyperlinkService();
-                hyperlinkService.HyperlinkMain(BowPath, DrawingsPath);
+                hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
             }
                 
