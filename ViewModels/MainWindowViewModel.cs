@@ -22,6 +22,7 @@ namespace PdfProcessor.ViewModels
         private bool _processBow;
         private bool _analyzeDatabase;
         private bool _processDrawing;
+        private bool _createHyperlinks;
         
         private readonly PdfTextService _pdfTextService;
         private string documentType;
@@ -88,6 +89,16 @@ namespace PdfProcessor.ViewModels
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
+        public bool CreateHyperlinks
+        {
+            get => _createHyperlinks;
+            set
+            {
+                _createHyperlinks = value;
+                OnPropertyChanged(nameof(CreateHyperlinks));
+                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+            }
+        }
 
         public ICommand BrowseBowCommand { get; }
         public ICommand BrowseDrawingsCommand { get; }
@@ -97,7 +108,8 @@ namespace PdfProcessor.ViewModels
         {
             BrowseBowCommand = new RelayCommand(BrowseBow);
             BrowseDrawingsCommand = new RelayCommand(BrowseDrawings);
-            ProcessCommand = new RelayCommand(async () => await Process(), () => IsEnabled && (ProcessBow || AnalyzeDatabase || ProcessDrawing));
+            ProcessCommand = new RelayCommand(async () => await Process(), 
+                () => IsEnabled && (ProcessBow || AnalyzeDatabase || ProcessDrawing || CreateHyperlinks));
         }
 
         private void BrowseBow()
@@ -230,6 +242,13 @@ namespace PdfProcessor.ViewModels
                  AnnotationService annotationService = new AnnotationService();
                  annotationService.AnnotatePdf(DrawingsPath, "DWG");
                  annotationService.AnnotatePdf(BowPath, "BOW");
+            }
+            if (CreateHyperlinks)
+            {
+                
+                HyperlinkService hyperlinkService = new HyperlinkService();
+                hyperlinkService.HyperlinkMain(BowPath, DrawingsPath);
+                
             }
                 
             StatusMessage = "Processing success!";

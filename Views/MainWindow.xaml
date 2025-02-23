@@ -81,6 +81,9 @@
             <CheckBox Content="Analyze Database"
                       FontSize="14" Margin="5"
                       IsChecked="{Binding AnalyzeDatabase, Mode=TwoWay}"/>
+            <CheckBox Content="Create Hyperlinks"
+                      FontSize="14" Margin="5"
+                      IsChecked="{Binding CreateHyperlinks, Mode=TwoWay}"/>
         </StackPanel>
         
         <!-- Process Button -->

@@ -220,7 +220,7 @@ Console.WriteLine($"PdfRegionService Time: {stopwatch.ElapsedMilliseconds} ms");
 
 
 -------------------------------------------------------------------------------------------------------------
-the database contains two tables: BOW_table and DWG_table.
+a database contains two tables: BOW_table and DWG_table.
 
 Both BOW_table and DWG_table have following columns:
 Id, Word, X1, Y1, X2, Y2, Sheet, PageRotation, WordRotation, Tag, Item, ColorFlag
@@ -256,8 +256,61 @@ if match is found, set ColorFlag of corresponding from_ref in BOW_table to 1.
 and ColorFlag of 'cable_tag' in DWG_table to 1.
 if match is not found, set both to 3.
 
+-------------------------------------------------------------------
 
+a database contains two tables: BOW_table and DWG_table.
 
+Both BOW_table and DWG_table have following columns:
+Id, Word, X1, Y1, X2, Y2, Sheet, PageRotation, WordRotation, Tag, Item, ColorFlag
+
+BOW_table and DWG_table data are extracted from two separate PDFs using PDFpig.
+
+BOW_table
+if the Tag = "from_ref" && ColorFlag = 1, then store X1, Y1, X2, Y2, Sheet, Word values.
+search for the Word in the Word column of DWG_table.
+if a match is found, get the corresponding Sheet.
+look for the Tag = "cable_tag"  with that sheet number. 
+store corresponding X1, Y1, X2, Y2, Sheet.
+
+using the X1, Y1, X2, Y2, Sheet in BOW_table, create a hyperlink in bow.pdf to  dwg.pdf using X1, Y1, X2, Y2, Sheet in DWG_table.
+
+using System;
+using System.IO;
+using System.Data.SQLite;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Annot;
+using iText.Kernel.Pdf.Action;
+using iText.Kernel.Geom;
+
+namespace PdfProcessor.Services;
+
+public class HyperlinkService
+{
+    public void HyperlinkMain(string dbFilePath, string bowPath, string dwgPath)
+    {
+        if (!File.Exists(dbFilePath))
+        {
+            Console.WriteLine("Database file not found.");
+            return;
+        }
+
+        try
+        {
+            using (var connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
+            {
+                connection.Open();
+                AddHyperlink(connection,bowPath, dwgPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing database: {ex.Message}");
+        }
+    }
+    public void AddHyperlink(SQLiteConnection connection, string bowPath, string dwgPath)
+    {
+        // logic here
+    }
 
 
 
