@@ -50,10 +50,14 @@ public class HyperlinkService
         int dwgSheet = 0;
         int currentItem = 0;
         int currentSheet = 0;
-        double currentX1 = 5000;
-        double currentY1 = 5000;
-        double currentX2 = 0;
-        double currentY2 = 0;
+        double currentFromX1 = 5000;
+        double currentFromY1 = 5000;
+        double currentFromX2 = 0;
+        double currentFromY2 = 0;
+        double currentToX1 = 5000;
+        double currentToY1 = 5000;
+        double currentToX2 = 0;
+        double currentToY2 = 0;
         
         using (var dwgPdfReader = new PdfReader(dwgPath))
         using (var dwgPdfDoc = new PdfDocument(dwgPdfReader))
@@ -69,7 +73,7 @@ public class HyperlinkService
             string sqlBOW = @"
                 SELECT Id, Word, X1, Y1, X2, Y2, Sheet, Item, Tag, ColorFlag
                 FROM BOW_table
-                WHERE ColorFlag NOT IN (2, 0)
+                WHERE ColorFlag NOT IN (2)
                 ORDER BY Sheet ASC, Item ASC, Tag
             ";
 
@@ -90,6 +94,12 @@ public class HyperlinkService
                     int bowItem = readerBOW.GetInt32(7);
                     string bowTag = readerBOW.GetString(8)?.Trim();
                     int bowColorFlag = readerBOW.GetInt32(9);
+
+                    if (currentSheet == 0)
+                    {
+                        currentSheet = bowSheet;
+                        currentItem = bowItem;
+                    }
 
 
                     if (bowTag == "from_ref" || bowTag == "to_ref")
@@ -163,61 +173,90 @@ public class HyperlinkService
                     }
                     
                     if (currentSheet == bowSheet)
-                    {
+                    {  
                         if (currentItem == bowItem)
                         {
                             if (bowTag == "from_desc")
+                            { 
+                                if (currentFromX1 >= bowX1 || currentFromY1 >= bowY1)
+                                {
+                                    currentFromX1 = bowX1;
+                                    currentFromY1 = bowY1;
+                                }
+                                if (currentFromX2 <= bowX2 || currentFromY2 <= bowY2)
+                                {
+                                    currentFromX2 = bowX2;
+                                    currentFromY2 = bowY2;
+                                }
+                                
+                            }
+                            if (bowTag == "to_desc")
                             {
-                                if (currentX1 >= bowX1 && currentY1 >= bowY1)
+                                if (currentToX1 >= bowX1 || currentToY1 >= bowY1)
                                 {
-                                    currentX1 = bowX1;
-                                    currentY1 = bowY1;
+                                    currentToX1 = bowX1;
+                                    currentToY1 = bowY1;
                                 }
-                                if (currentX2 <= bowX2 && currentY2 <= bowY2)
+                                if (currentToX2 <= bowX2 || currentToY2 <= bowY2)
                                 {
-                                    currentX2 = bowX2;
-                                    currentY2 = bowY2;
+                                    currentToX2 = bowX2;
+                                    currentToY2 = bowY2;
                                 }
-                        
-                        
-                        
-                                // // cableTagCoords is (dwgX1, dwgY1, dwgX2, dwgY2, dwgSheet)
-                                // currentX1 = cableTagCoords.Value.Item1;
-                                // currentY1 = cableTagCoords.Value.Item2;
-                                // currentX2 = cableTagCoords.Value.Item3;
-                                // currentY2 = cableTagCoords.Value.Item4;
-                                // dwgSheet = cableTagCoords.Value.Item5;
-                                // int wordRot = cableTagCoords.Value.Item6;
-                                //
-                                //
-                                //
-                                // // Calculate center of the cable tag area (target location in DWG)
-                                // if (wordRot == 0)
-                                // {
-                                //     targetX = dwgX1 - 20;
-                                //     targetY = dwgY2 + 20;
-                                //     zoomLevel = 2.5;
-                                // }
-                                // else
-                                // {
-                                //     targetX = dwgX2 - 20;
-                                //     targetY = dwgY2 + 20;
-                                //     zoomLevel = 2.5;
-                                // }
                             }
                         }
                         else
                         {
+                            // Make sure bowSheet is valid in the PDF doc (1-based indexing).
+                            if (bowSheet < 1 || bowSheet > bowPdfDoc.GetNumberOfPages())
+                                continue;
+                            var page = bowPdfDoc.GetPage(bowSheet);
+                    
+                            // The rectangle for the link area on the BOW PDF:
+                            float linkWidth = (float)Math.Abs(currentToX2 - currentToX1);
+                            float linkHeight = (float)Math.Abs(currentToY2 - currentToY1);
+                            Rectangle linkLocation = new Rectangle((float)currentToX1, (float)currentToY1, 
+                                linkWidth, linkHeight);
+                            PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(linkLocation);
+                            
+                            // Correct way to create GoToR with zoom:
+                            PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(dwgSheet,
+                                1800, (float)110, 1.0f);
+                            PdfAction gotoRemote = PdfAction.CreateGoToR(fileSpec, destination, false);
+                            
+                            linkAnnotation.SetAction(gotoRemote);
+                            page.AddAnnotation(linkAnnotation);
+                            
+                            // The rectangle for the link area on the BOW PDF:
+                            linkWidth = (float)Math.Abs(currentFromX2 - currentFromX1);
+                            linkHeight = (float)Math.Abs(currentFromY2 - currentFromY1);
+                            linkLocation = new Rectangle((float)currentFromX1, (float)currentFromY1, 
+                                linkWidth, linkHeight);
+                            linkAnnotation = new PdfLinkAnnotation(linkLocation);
+                            
+                            // Correct way to create GoToR with zoom:
+                            destination = PdfExplicitRemoteGoToDestination.CreateXYZ(dwgSheet,
+                                1800, (float)110, 1.0f);
+                            gotoRemote = PdfAction.CreateGoToR(fileSpec, destination, false);
+                            
+                            linkAnnotation.SetAction(gotoRemote);
+                            page.AddAnnotation(linkAnnotation);
+                            
                             currentItem = bowItem;
+                            currentFromX1 = 5000;
+                            currentFromY1 = 5000;
+                            currentFromX2 = 0;
+                            currentFromY2 = 0;
+                            currentToX1 = 5000;
+                            currentToY1 = 5000;
+                            currentToX2 = 0;
+                            currentToY2 = 0;
                         }
                     }
                     else
                     {
                         currentSheet = bowSheet;
+                        currentItem = bowItem;
                     }
-                    
-                    
-                    
                     
                 }
             }
