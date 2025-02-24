@@ -1,5 +1,4 @@
-﻿using PdfSharp.Drawing;
-using UglyToad.PdfPig.Core;
+﻿using UglyToad.PdfPig.Core;
 
 namespace PdfProcessor.Services
 {

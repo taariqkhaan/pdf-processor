@@ -23,6 +23,7 @@ namespace PdfProcessor.ViewModels
         private bool _analyzeDatabase;
         private bool _processDrawing;
         private bool _createHyperlinks;
+        private bool _rotateVerticalDrawings;
         
         private readonly PdfTextService _pdfTextService;
         private string documentType;
@@ -99,6 +100,16 @@ namespace PdfProcessor.ViewModels
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
+        public bool RotateVerticalDrawings
+        {
+            get => _rotateVerticalDrawings;
+            set
+            {
+                _rotateVerticalDrawings = value;
+                OnPropertyChanged(nameof(RotateVerticalDrawings));
+                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+            }
+        }
 
         public ICommand BrowseBowCommand { get; }
         public ICommand BrowseDrawingsCommand { get; }
@@ -109,7 +120,8 @@ namespace PdfProcessor.ViewModels
             BrowseBowCommand = new RelayCommand(BrowseBow);
             BrowseDrawingsCommand = new RelayCommand(BrowseDrawings);
             ProcessCommand = new RelayCommand(async () => await Process(), 
-                () => IsEnabled && (ProcessBow || AnalyzeDatabase || ProcessDrawing || CreateHyperlinks));
+                () => IsEnabled && (ProcessBow || AnalyzeDatabase || 
+                                    ProcessDrawing || CreateHyperlinks || RotateVerticalDrawings));
         }
 
         private void BrowseBow()
@@ -180,14 +192,15 @@ namespace PdfProcessor.ViewModels
                     CableScheduleService cableScheduleService = new CableScheduleService();
                     cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 });
-
-                // Highlight the drawing
-                // await Task.Run(() =>
-                // {
-                //     AnnotationService annotationService = new AnnotationService();
-                //     annotationService.AnnotatePdf(BowPath, documentType);
-                // });
             }
+
+            if (RotateVerticalDrawings)
+            {
+                ComparisonLogic comparisonLogic = new ComparisonLogic();
+                comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+            }
+            
+            
             if (ProcessDrawing)
             {
                 documentType = "TITLE";
@@ -220,6 +233,8 @@ namespace PdfProcessor.ViewModels
                 
                 // Save text in DB format
                 exportService = new ExportService();
+                // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
+                //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
                 await exportService.SaveToDatabase(extractedDwgData, 
                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
                 

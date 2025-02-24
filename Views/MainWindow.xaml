@@ -84,6 +84,9 @@
             <CheckBox Content="Create Hyperlinks"
                       FontSize="14" Margin="5"
                       IsChecked="{Binding CreateHyperlinks, Mode=TwoWay}"/>
+            <CheckBox Content="Rotate Vertical Drawings"
+                      FontSize="14" Margin="5"
+                      IsChecked="{Binding RotateVerticalDrawings, Mode=TwoWay}"/>
         </StackPanel>
         
         <!-- Process Button -->

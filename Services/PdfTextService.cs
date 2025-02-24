@@ -66,7 +66,12 @@ namespace PdfProcessor.Services
             double lowestBottomLeftY = double.MaxValue;
             double highestTopRightX = double.MinValue;
             double highestTopRightY = double.MinValue;
-
+           
+            int zeroRotation = 0;
+            int ninetyRotation = 0;
+            int oneEightyRotation = 0;
+            int twoSeventyRotation = 0;
+            
             foreach (Word word in words)
             {
                 if (!string.IsNullOrWhiteSpace(word.Text))
@@ -105,6 +110,23 @@ namespace PdfProcessor.Services
                     
                     // Check word rotation
                     int wordRotation = DetermineWordRotation(word, bottomLeftX, bottomLeftY, topRightX, topRightY);
+
+                    if (wordRotation == 0)
+                    {
+                        zeroRotation++;
+                    }
+                    if (wordRotation == 90)
+                    {
+                        ninetyRotation++;
+                    }
+                    if (wordRotation == 180)
+                    {
+                        oneEightyRotation++;
+                    }
+                    if (wordRotation == 270)
+                    {
+                        twoSeventyRotation++;
+                    }
                     
                     // Check if the word falls within the search region
                     if (!IsWithinRegion(bottomLeftX, bottomLeftY, topRightX, topRightY, searchRegion))
@@ -126,6 +148,7 @@ namespace PdfProcessor.Services
                     
                 }
             }
+            
             return textModels;
         }
         

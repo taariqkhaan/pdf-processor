@@ -13,6 +13,15 @@ namespace PdfProcessor.Services;
 
 public class HyperlinkService
 {
+    double currentFromX1 = 5000;
+    double currentFromY1 = 5000;
+    double currentFromX2 = 0;
+    double currentFromY2 = 0;
+    double currentToX1 = 5000;
+    double currentToY1 = 5000;
+    double currentToX2 = 0;
+    double currentToY2 = 0;
+    
     public void HyperlinkMain(string dbFilePath)
     {
         string bowPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(dbFilePath), "highlighted_BOW.pdf");
@@ -50,14 +59,13 @@ public class HyperlinkService
         int dwgSheet = 0;
         int currentItem = 0;
         int currentSheet = 0;
-        double currentFromX1 = 5000;
-        double currentFromY1 = 5000;
-        double currentFromX2 = 0;
-        double currentFromY2 = 0;
-        double currentToX1 = 5000;
-        double currentToY1 = 5000;
-        double currentToX2 = 0;
-        double currentToY2 = 0;
+        int currentToPage = 0;
+        int currentFromPage = 0;
+        float currentToWidth = 0;
+        float currentFromWidth = 0;
+        float dwgWidth = 0;
+        float dwgHeight = 0;
+        
         
         using (var dwgPdfReader = new PdfReader(dwgPath))
         using (var dwgPdfDoc = new PdfDocument(dwgPdfReader))
@@ -73,7 +81,6 @@ public class HyperlinkService
             string sqlBOW = @"
                 SELECT Id, Word, X1, Y1, X2, Y2, Sheet, Item, Tag, ColorFlag
                 FROM BOW_table
-                WHERE ColorFlag NOT IN (2)
                 ORDER BY Sheet ASC, Item ASC, Tag
             ";
 
@@ -82,7 +89,6 @@ public class HyperlinkService
             {
                 while (readerBOW.Read())
                 {
-
                     string bowWord = readerBOW.GetString(1)?.Trim();
                     if (string.IsNullOrWhiteSpace(bowWord))
                         continue; // Skip this iteration and move to the next row
@@ -93,15 +99,14 @@ public class HyperlinkService
                     int bowSheet = readerBOW.GetInt32(6);
                     int bowItem = readerBOW.GetInt32(7);
                     string bowTag = readerBOW.GetString(8)?.Trim();
-                    int bowColorFlag = readerBOW.GetInt32(9);
-
+                    
                     if (currentSheet == 0)
                     {
                         currentSheet = bowSheet;
                         currentItem = bowItem;
                     }
 
-
+                    // Determine and place From and To drawing references hyperlinks
                     if (bowTag == "from_ref" || bowTag == "to_ref")
                     {
                         bowWord = bowWord.Replace("(", "").Replace(")", "");
@@ -123,7 +128,24 @@ public class HyperlinkService
                         int? dwgSheetFound = GetSheetForWord(connection, bowWord);
                         if (dwgSheetFound == null)
                             continue;
+                        PdfPage dwgPage = dwgPdfDoc.GetPage(dwgSheetFound.Value);
+                        Rectangle pageSize = dwgPage.GetPageSize();
+                        dwgWidth = pageSize.GetWidth();
+                        dwgHeight = pageSize.GetHeight();
+                        int dwgrotation = dwgPage.GetRotation();
+                        
 
+                        if (bowTag == "from_ref")
+                        {
+                            currentFromPage = dwgSheetFound.Value;
+                            currentFromWidth = dwgWidth;
+                        }
+                        if (bowTag == "to_ref")
+                        {
+                            currentToPage = dwgSheetFound.Value;
+                            currentToWidth = dwgWidth;
+                        }
+                        
                         // Look for Tag = "cable_tag" in DWG_table with that sheet
                         var cableTagCoords = GetCableTagCoords(connection, dwgSheetFound.Value, cableWord);
                         if (cableTagCoords == null)
@@ -146,8 +168,8 @@ public class HyperlinkService
                         }
                         else
                         {
-                            targetX = dwgX2 - 20;
-                            targetY = dwgY2 + 20;
+                            targetX = dwgX1 - 20;
+                            targetY = dwgY1 - 20;
                             zoomLevel = 2.5;
                         }
                         
@@ -163,7 +185,7 @@ public class HyperlinkService
                         PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(linkLocation);
                     
                     
-                        // Correct way to create GoToR with zoom:
+                        // create GoToR with zoom:
                         PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(dwgSheet,
                             (float)targetX, (float)targetY, (float)zoomLevel);
                         PdfAction gotoRemote = PdfAction.CreateGoToR(fileSpec, destination, false);
@@ -172,92 +194,55 @@ public class HyperlinkService
                         page.AddAnnotation(linkAnnotation);
                     }
                     
+                    // Determine and place From and To description hyperlinks
                     if (currentSheet == bowSheet)
                     {  
                         if (currentItem == bowItem)
                         {
                             if (bowTag == "from_desc")
                             { 
-                                if (currentFromX1 >= bowX1 || currentFromY1 >= bowY1)
+                                if (currentFromX1 >= bowX1)
                                 {
                                     currentFromX1 = bowX1;
                                     currentFromY1 = bowY1;
                                 }
-                                if (currentFromX2 <= bowX2 || currentFromY2 <= bowY2)
+                                if (currentFromX2 <= bowX2)
                                 {
                                     currentFromX2 = bowX2;
                                     currentFromY2 = bowY2;
                                 }
-                                
                             }
                             if (bowTag == "to_desc")
                             {
-                                if (currentToX1 >= bowX1 || currentToY1 >= bowY1)
+                                if (currentToX1 >= bowX1)
                                 {
                                     currentToX1 = bowX1;
                                     currentToY1 = bowY1;
                                 }
-                                if (currentToX2 <= bowX2 || currentToY2 <= bowY2)
+                                if (currentToX2 <= bowX2)
                                 {
                                     currentToX2 = bowX2;
                                     currentToY2 = bowY2;
                                 }
                             }
+                            
                         }
                         else
                         {
-                            // Make sure bowSheet is valid in the PDF doc (1-based indexing).
-                            if (bowSheet < 1 || bowSheet > bowPdfDoc.GetNumberOfPages())
-                                continue;
-                            var page = bowPdfDoc.GetPage(bowSheet);
-                    
-                            // The rectangle for the link area on the BOW PDF:
-                            float linkWidth = (float)Math.Abs(currentToX2 - currentToX1);
-                            float linkHeight = (float)Math.Abs(currentToY2 - currentToY1);
-                            Rectangle linkLocation = new Rectangle((float)currentToX1, (float)currentToY1, 
-                                linkWidth, linkHeight);
-                            PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(linkLocation);
-                            
-                            // Correct way to create GoToR with zoom:
-                            PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(dwgSheet,
-                                1800, (float)110, 1.0f);
-                            PdfAction gotoRemote = PdfAction.CreateGoToR(fileSpec, destination, false);
-                            
-                            linkAnnotation.SetAction(gotoRemote);
-                            page.AddAnnotation(linkAnnotation);
-                            
-                            // The rectangle for the link area on the BOW PDF:
-                            linkWidth = (float)Math.Abs(currentFromX2 - currentFromX1);
-                            linkHeight = (float)Math.Abs(currentFromY2 - currentFromY1);
-                            linkLocation = new Rectangle((float)currentFromX1, (float)currentFromY1, 
-                                linkWidth, linkHeight);
-                            linkAnnotation = new PdfLinkAnnotation(linkLocation);
-                            
-                            // Correct way to create GoToR with zoom:
-                            destination = PdfExplicitRemoteGoToDestination.CreateXYZ(dwgSheet,
-                                1800, (float)110, 1.0f);
-                            gotoRemote = PdfAction.CreateGoToR(fileSpec, destination, false);
-                            
-                            linkAnnotation.SetAction(gotoRemote);
-                            page.AddAnnotation(linkAnnotation);
-                            
+                            Console.WriteLine($"{bowItem - 1}, {bowSheet}");
+                            AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
+                                currentToPage, currentFromWidth, currentToWidth);
                             currentItem = bowItem;
-                            currentFromX1 = 5000;
-                            currentFromY1 = 5000;
-                            currentFromX2 = 0;
-                            currentFromY2 = 0;
-                            currentToX1 = 5000;
-                            currentToY1 = 5000;
-                            currentToX2 = 0;
-                            currentToY2 = 0;
                         }
                     }
                     else
-                    {
+                    {   
+                        Console.WriteLine($" last item {bowSheet - 1}");
+                        AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
+                            currentToPage, currentFromWidth, currentToWidth);
                         currentSheet = bowSheet;
                         currentItem = bowItem;
                     }
-                    
                 }
             }
             
@@ -313,6 +298,37 @@ public class HyperlinkService
             }
         }
         return null;
+    }
+    private void AddPdfLinkAnnotation(PdfDocument bowPdfDoc, int currentSheet, PdfFileSpec fileSpec, 
+        int currentFromPage, int currentToPage, float currentFromWidth, float currentToWidth)
+    {
+        
+        
+        var page = bowPdfDoc.GetPage(currentSheet);
+        
+        // Add 'To' Reference Link
+        float linkWidth = (float)Math.Abs(currentToX2 - currentToX1);
+        float linkHeight = (float)Math.Abs(currentToY2 - currentToY1);
+        Rectangle linkLocation = new Rectangle((float)currentToX1, (float)currentToY1, linkWidth, linkHeight);
+        PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(linkLocation);
+        PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(currentToPage, currentToWidth - 500, 110, 1.0f);
+        linkAnnotation.SetAction(PdfAction.CreateGoToR(fileSpec, destination, false));
+        page.AddAnnotation(linkAnnotation);
+        
+
+        // Add 'From' Reference Link
+        linkWidth = (float)Math.Abs(currentFromX2 - currentFromX1);
+        linkHeight = (float)Math.Abs(currentFromY2 - currentFromY1);
+        linkLocation = new Rectangle((float)currentFromX1, (float)currentFromY1, linkWidth, linkHeight);
+        linkAnnotation = new PdfLinkAnnotation(linkLocation);
+        destination = PdfExplicitRemoteGoToDestination.CreateXYZ(currentFromPage, currentFromWidth - 500, 110, 1.0f);
+        linkAnnotation.SetAction(PdfAction.CreateGoToR(fileSpec, destination, false));
+        page.AddAnnotation(linkAnnotation);
+        
+        currentFromX1 = currentToX1 = 5000;
+        currentFromY1 = currentToY1 = 5000;
+        currentFromX2 = currentToX2 = 0;
+        currentFromY2 = currentToY2 = 0;
     }
     
 }
