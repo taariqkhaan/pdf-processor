@@ -21,6 +21,7 @@ public class HyperlinkService
     double currentToY1 = 5000;
     double currentToX2 = 0;
     double currentToY2 = 0;
+    private string tempBowPath = null;
     
     public void HyperlinkMain(string dbFilePath)
     {
@@ -50,7 +51,7 @@ public class HyperlinkService
 
     public void AddHyperlink(SQLiteConnection connection, string bowPath, string dwgPath)
     {
-        string outputBowPdf = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(bowPath), "bow-linked.pdf");
+        tempBowPath = bowPath + ".tmp";
 
         string cableWord = null;
         double targetX = 0;
@@ -70,7 +71,7 @@ public class HyperlinkService
         using (var dwgPdfReader = new PdfReader(dwgPath))
         using (var dwgPdfDoc = new PdfDocument(dwgPdfReader))
         using (var pdfReader = new PdfReader(bowPath))
-        using (var pdfWriter = new PdfWriter(outputBowPdf))
+        using (var pdfWriter = new PdfWriter(tempBowPath))
         using (var bowPdfDoc = new PdfDocument(pdfReader, pdfWriter))
         {
             
@@ -245,8 +246,10 @@ public class HyperlinkService
             }
             
         }
-
-        Console.WriteLine($"Hyperlinks added. Output PDF: {outputBowPdf}");
+        // Overwrite the original file
+        File.Delete(bowPath);
+        File.Move(tempBowPath, bowPath);
+        Console.WriteLine($"Hyperlinked cable schedule PDF saved at: {tempBowPath}");
     }
     private int? GetSheetForWord(SQLiteConnection connection, string word)
     {

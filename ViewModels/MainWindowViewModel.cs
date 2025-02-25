@@ -9,8 +9,6 @@ using PdfProcessor.Models;
 using PdfProcessor.Services;
 
 
-
-
 namespace PdfProcessor.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
@@ -20,12 +18,13 @@ namespace PdfProcessor.ViewModels
         private string _bowPath;
         private string _drawingsPath;
         
-        private bool _processBow;
-        private bool _analyzeDatabase;
-        private bool _processDrawing;
-        private bool _createHyperlinks;
+        private bool _qualityCheck;
+        private bool _cableSummary;
+        private bool _cableDetails;
+        private bool _test1;
         private bool _isRotateVerticalDrawings;
         private bool _isRevertVerticalDrawings;
+        private bool _isNoRotationDrawings;
         
         private readonly PdfTextService _pdfTextService;
         private string documentType;
@@ -39,19 +38,16 @@ namespace PdfProcessor.ViewModels
             get => _isEnabled;
             set { _isEnabled = value; OnPropertyChanged(nameof(IsEnabled)); }
         }
-
         public string BowPath
         {
             get => _bowPath;
             set { _bowPath = value; OnPropertyChanged(nameof(BowPath)); }
         }
-
         public string DrawingsPath
         {
             get => _drawingsPath;
             set { _drawingsPath = value; OnPropertyChanged(nameof(DrawingsPath)); }
         }
-        
         public string StatusMessage
         {
             get => _statusMessage;
@@ -62,45 +58,43 @@ namespace PdfProcessor.ViewModels
             }
         }
         
-        public bool ProcessBow
+        public bool QualityCheck
         {
-            get => _processBow;
+            get => _qualityCheck;
             set
             {
-                _processBow = value;
-                OnPropertyChanged(nameof(ProcessBow));
+                _qualityCheck = value;
+                OnPropertyChanged(nameof(QualityCheck));
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
-
-        public bool AnalyzeDatabase
+        public bool CableSummary
         {
-            get => _analyzeDatabase;
+            get => _cableSummary;
             set
             {
-                _analyzeDatabase = value;
-                OnPropertyChanged(nameof(AnalyzeDatabase));
+                _cableSummary = value;
+                OnPropertyChanged(nameof(CableSummary));
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
-
-        public bool ProcessDrawing
+        public bool CableDetails
         {
-            get => _processDrawing;
+            get => _cableDetails;
             set
             {
-                _processDrawing = value;
-                OnPropertyChanged(nameof(ProcessDrawing));
+                _cableDetails = value;
+                OnPropertyChanged(nameof(CableDetails));
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
-        public bool CreateHyperlinks
+        public bool Test1
         {
-            get => _createHyperlinks;
+            get => _test1;
             set
             {
-                _createHyperlinks = value;
-                OnPropertyChanged(nameof(CreateHyperlinks));
+                _test1 = value;
+                OnPropertyChanged(nameof(Test1));
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
@@ -110,7 +104,11 @@ namespace PdfProcessor.ViewModels
             set
             {
                 _isRotateVerticalDrawings = value;
-                if (value) IsRevertVerticalDrawings = false;
+                if (value)
+                {
+                    IsRevertVerticalDrawings = false;
+                    IsNoRotationDrawings = false;
+                }
                 OnPropertyChanged(nameof(IsRotateVerticalDrawings));
             }
         }
@@ -120,8 +118,26 @@ namespace PdfProcessor.ViewModels
             set
             {
                 _isRevertVerticalDrawings = value;
-                if (value) IsRotateVerticalDrawings = false;
+                if (value)
+                {
+                    IsRotateVerticalDrawings = false;
+                    IsNoRotationDrawings = false;
+                }
                 OnPropertyChanged(nameof(IsRevertVerticalDrawings));
+            }
+        }
+        public bool IsNoRotationDrawings
+        {
+            get => _isNoRotationDrawings;
+            set
+            {
+                _isNoRotationDrawings = value;
+                if (value)
+                {
+                    IsRotateVerticalDrawings = false;
+                    IsRevertVerticalDrawings = false;
+                }
+                OnPropertyChanged(nameof(IsNoRotationDrawings));
             }
         }
 
@@ -134,9 +150,9 @@ namespace PdfProcessor.ViewModels
             BrowseBowCommand = new RelayCommand(BrowseBow);
             BrowseDrawingsCommand = new RelayCommand(BrowseDrawings);
             ProcessCommand = new RelayCommand(async () => await Process(), 
-                () => IsEnabled && (ProcessBow || AnalyzeDatabase || 
-                                    ProcessDrawing || CreateHyperlinks || IsRotateVerticalDrawings
-                                    || IsRevertVerticalDrawings));
+                () => IsEnabled && (QualityCheck || CableSummary || 
+                                    CableDetails || Test1 || IsRotateVerticalDrawings
+                                    || IsRevertVerticalDrawings || IsNoRotationDrawings));
         }
 
         private void BrowseBow()
@@ -183,7 +199,7 @@ namespace PdfProcessor.ViewModels
                 return;
             }
             
-            if (ProcessBow)
+            if (QualityCheck)
             {
                 StatusMessage = "Importing cable schedule to database...";
                 //---------------------------------------Extract text from cable schedule-------------------------------
@@ -275,6 +291,10 @@ namespace PdfProcessor.ViewModels
                 HyperlinkService hyperlinkService = new HyperlinkService();
                 hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
+                //-----------------------Delete the database------------------------------------------------------------
+                // File.Delete(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                // Console.WriteLine("Database deleted successfully.");
+                
             }
             if (IsRotateVerticalDrawings)
             {
@@ -288,6 +308,43 @@ namespace PdfProcessor.ViewModels
                 StatusMessage = "Reverting vertical drawings rotation...";
                 PdfRotationService pdfRotationService = new PdfRotationService();
                 pdfRotationService.RevertRotations(DrawingsPath);
+            }
+            if (IsNoRotationDrawings)
+            {
+                StatusMessage = "Skipping vertical drawings rotation...";
+                Console.WriteLine($"Vertical pages rotation skipped");
+            }
+
+            if (Test1)
+            {
+                documentType = "BOW";
+                var result = await Task.Run(() =>
+                {
+                    PdfTextService pdfTextService = new PdfTextService();
+                    return pdfTextService.ExtractTextAndCoordinates(BowPath, documentType);
+                });
+                List<PdfTextModel> extractedBowData = result.ExtractedText;
+
+                // Save text to database
+                ExportService exportService = new ExportService();
+                // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
+                //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
+                await exportService.SaveToDatabase(extractedBowData,
+                    Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), documentType);
+                
+                // Add tags to relevant texts
+                await Task.Run(() =>
+                {
+                    CableScheduleService cableScheduleService = new CableScheduleService();
+                    cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                });
+                
+                //Add tags to relevant texts
+                await Task.Run(() =>
+                {
+                    CableDetailsService cableDetailsService = new CableDetailsService();
+                    cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
+                });
             }
                 
             StatusMessage = "Processing success!";
@@ -322,6 +379,5 @@ namespace PdfProcessor.ViewModels
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
     }
-    
 
 }

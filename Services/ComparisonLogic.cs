@@ -25,6 +25,7 @@ public class ComparisonLogic
                 List<BowEntry> bowData = GetBowEntries(connection);
                 CheckReferences(dwgData, bowData);
                 UpdateDatabase(connection, dwgData, bowData);
+                Console.WriteLine($"Cable schedule to drawings comparison done.");
             }
         }
         catch (Exception ex)
@@ -379,7 +380,6 @@ public class ComparisonLogic
                     }
                 }
                 transaction.Commit();
-                Console.WriteLine("Database updated successfully.");
             }
             catch (Exception ex)
             {

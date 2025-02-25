@@ -21,6 +21,7 @@ namespace PdfProcessor.Services
                     connection.Open();
                     UpdateAndDeleteRows(connection);
                     CreateDwgNumberTable(connection);
+                    Console.WriteLine($"Tags assigned to drawings texts in database");
                 }
             }
             catch (Exception ex)

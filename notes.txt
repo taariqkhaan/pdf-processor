@@ -311,11 +311,77 @@ public class HyperlinkService
     {
         // logic here
     }
+----------------------------------------------------------------------------------------------------------------
+use C#, .NET 8.0, itext7, SQLlite
+
+a database contains table called BOW_table as input parameter dbFilePath.
+with following columns:
+Id, Word, X1, Y1, X2, Y2, Sheet, PageRotation, WordRotation, Tag, Item, ColorFlag.
 
 
+create a table called soco_cables_list.
+columns: KeyMark, ParallelCables, Conductors, Size, Insulation.
+ParallelCables, Conductors are type integer
+KeyMark, Size, Insulation are type text
+
+select Word, Tag, Sheet and Item
+where tag = "size" or "insulation" or "conductors" or "parallel_cables"
+order by sheet, item, tag.
+
+create a dictionary called bowCablesList
+to store Word values of "size" or "insulation" or "conductors" or "parallel_cables",  Sheet, Item, keymark
+
+go row by row of BOW_table.
+Item = currentItem and Sheet=currentSheet then:
+    if Tag = "size" --> keep appending --> store in bowCablesList when item number changes
+    if Tag = "parallel_cables" --> keep appending --> store in bowCablesList when item number changes
+    if Tag = "conductors" --> keep appending --> store in bowCablesList when item number changes
+    if Tag = "insulation" --> keep appending --> store in bowCablesList when item number changes
+    keep keymark field null.
+ 
+ 
+ open up database at .\Resources\Database\soco_cables_list.db"
+ lookup table called cables_list
+ 
+ iterate through all the entries in bowCablesList.
+ 
+ if 
+ bowCablesList.size  = cables_list.Size AND 
+ bowCablesList.parallel_cables = cables_list.ParallelCables AND
+ bowCablesList.conductors  = cables_list.Conductors AND 
+ bowCablesList.insulation  = cables_list.Insulation
+ then
+ bowCablesList.keymark = cables_list.KeyMark
+ 
+ 
+ modify BOW_table to add rows using bowCablesList
+ Word = keymark
+ X1, Y1, X2, Y2 = 0
+ Sheet = sheet
+ PageRotation = 0
+ WordRotation = 0 
+ Tag = "keymark"
+ Item = item
+ ColorFlag = 0
+ 
+ 
+ 
+ 
+using System.Data.SQLite;
+using System.IO;
 
 
+namespace PdfProcessor.Services;
 
+public class CableDetailsService
+{
+    public void ProcessDatabase(string dbFilePath)
+    {
+
+
+create a separate function
+in the BOW_table look group by Tag = 'keymark'.
+place the Word value on the input pdf using the Sheet number and X1, Y1 values as coordinates
 
 
 

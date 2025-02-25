@@ -206,3 +206,4 @@ E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\SixLabors.ImageSharp.dll
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\de\PdfSharp-gdi.resources.dll
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\de\PdfSharp.Charting-gdi.resources.dll
 E:\GitHub\pdf-processor\bin\Debug\net8.0-windows\de\PdfSharpCore.resources.dll
+C:\DOTNETPROJECTS\pdf-processor\bin\Debug\net8.0-windows\Resources\Database\soco_cables_list.db

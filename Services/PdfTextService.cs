@@ -47,6 +47,7 @@ namespace PdfProcessor.Services
                     pageNumber++;
                 }
             }
+            Console.WriteLine($"{searchRegionType} texts extracted.");
             return new PdfExtractionResult
             {
                 ExtractedText = extractedText,

@@ -29,6 +29,7 @@ namespace PdfProcessor.Services
             // Overwrite the original file
             File.Delete(pdfPath);
             File.Move(tempFilePath, pdfPath);
+            Console.WriteLine($"Vertical pages rotated");
         }
         
         public void RevertRotations(string filePath)
@@ -54,6 +55,7 @@ namespace PdfProcessor.Services
             // Overwrite the original file
             File.Delete(pdfPath);
             File.Move(tempFilePath, pdfPath);
+            Console.WriteLine($"Vertical pages rotation reverted");
         }
     }
 }

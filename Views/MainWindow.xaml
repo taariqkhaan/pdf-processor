@@ -73,18 +73,18 @@
         
         <!-- Checkboxes Section -->
         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-            <CheckBox Content="Process Bill of Wire" 
+            <CheckBox Content="Quality Check" 
                       FontSize="14" Margin="5"
-                      IsChecked="{Binding ProcessBow, Mode=TwoWay}"/>
-            <CheckBox Content="Process Drawing"
+                      IsChecked="{Binding QualityCheck, Mode=TwoWay}"/>
+            <CheckBox Content="Add Cable Details To Cable Schedule"
                       FontSize="14" Margin="5"
-                      IsChecked="{Binding ProcessDrawing, Mode=TwoWay}"/>
-            <CheckBox Content="Analyze Database"
+                      IsChecked="{Binding CableDetails, Mode=TwoWay}"/>
+            <CheckBox Content="Create Cable Summary Report"
                       FontSize="14" Margin="5"
-                      IsChecked="{Binding AnalyzeDatabase, Mode=TwoWay}"/>
-            <CheckBox Content="Create Hyperlinks"
+                      IsChecked="{Binding CableSummary, Mode=TwoWay}"/>
+            <CheckBox Content="Test1"
                       FontSize="14" Margin="5"
-                      IsChecked="{Binding CreateHyperlinks, Mode=TwoWay}"/>
+                      IsChecked="{Binding Test1, Mode=TwoWay}"/>
         </StackPanel>
         
         <!-- Rotate/Revert Rotation Radio Buttons -->
@@ -96,6 +96,9 @@
                 <RadioButton Content="Revert Rotation"
                              FontSize="14" Margin="5"
                              IsChecked="{Binding IsRevertVerticalDrawings, Mode=TwoWay}"/>
+                <RadioButton Content="Do Not Rotate"
+                             FontSize="14" Margin="5"
+                             IsChecked="{Binding IsNoRotationDrawings, Mode=TwoWay}"/>
             </StackPanel>
         </GroupBox>
         

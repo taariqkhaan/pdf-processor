@@ -38,8 +38,6 @@ namespace PdfProcessor.Services
 
         public async Task SaveToDatabase(List<PdfTextModel> extractedData, string databasePath, string documentType)
         {
-            
-
             await Task.Run(() =>
             {
                 string tableName = documentType + "_table";
@@ -138,6 +136,7 @@ namespace PdfProcessor.Services
                         cmd.ExecuteNonQuery();
                     }
                 }
+                Console.WriteLine($"{documentType} text has been saved to database.");
             });
 
         }

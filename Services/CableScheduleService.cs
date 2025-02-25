@@ -8,7 +8,7 @@ namespace PdfProcessor.Services
         private static readonly List<string> RequiredTypes = new()
         {
             "cable_tag", "from_desc", "to_desc", "function", "size", "insulation",
-            "from_ref", "to_ref", "voltage", "conductors", "length"
+            "from_ref", "to_ref", "voltage", "conductors", "length", "parallel_cables"
         };
 
         public void ProcessDatabase(string dbFilePath)
@@ -27,6 +27,7 @@ namespace PdfProcessor.Services
                     UpdateRowsBasedOnConditions(connection);
                     DeleteNullRows(connection);
                     UpdateColorFlag(connection);
+                    Console.WriteLine($"BOW Tags assigned to texts in database");
                 }
             }
             catch (Exception ex)
@@ -165,14 +166,8 @@ namespace PdfProcessor.Services
             }
         }
         
-        private void MissingTag(
-            SQLiteConnection connection,
-            HashSet<string> existingTags,
-            int sheetNumber,
-            int itemNumber,
-            double x1_current,
-            double y1_current
-        )
+        private void MissingTag(SQLiteConnection connection, HashSet<string> existingTags, int sheetNumber,
+            int itemNumber, double x1_current, double y1_current)
         {
             double line1Y = y1_current;
             double line2Y = y1_current - 12;
@@ -285,6 +280,7 @@ namespace PdfProcessor.Services
                      _ when x1 > x1_current + 100 && x1 <= x1_current + 230 => "from_desc",
                      _ when x1 > x1_current + 231 && x1 <= x1_current + 360 => "to_desc",
                      _ when x1 > x1_current + 361 && x1 <= x1_current + 420 => "function",
+                     _ when x1 > x1_current + 421 && x1 <= x1_current + 485 => "parallel_cables",
                      _ when x1 > x1_current + 486 && x1 <= x1_current + 530 => "size",
                      _ when x1 > x1_current + 540 && x1 <= x1_current + 700 => "insulation",
                     _ => string.Empty

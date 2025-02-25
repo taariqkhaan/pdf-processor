@@ -28,6 +28,7 @@ public class DwgTitleService
                     UpdateRowsBasedOnConditions(connection);
                     DeleteNullRows(connection);
                     UpdateColorFlag(connection);
+                    Console.WriteLine($"Tags assigned to title block texts in database");
                 }
             }
             catch (Exception ex)
