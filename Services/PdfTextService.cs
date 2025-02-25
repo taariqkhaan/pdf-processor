@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.Eventing.Reader;
 using PdfProcessor.Models;
+using PdfProcessor.Services;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 using UglyToad.PdfPig.Util;
-
 
 namespace PdfProcessor.Services
 {
@@ -20,6 +20,7 @@ namespace PdfProcessor.Services
         private int itemNumber = 0;
         private int colorFlag = 0;
         private bool dateFoundOnPage = false;
+        List<int> VerticalPageList = new List<int>();
         
         
         private readonly PdfRegionService _regionService;
@@ -27,9 +28,10 @@ namespace PdfProcessor.Services
         {
             _regionService = new PdfRegionService();
         }
-        public List<PdfTextModel> ExtractTextAndCoordinates(string pdfPath, string searchRegionType)
+        public PdfExtractionResult ExtractTextAndCoordinates(string pdfPath, string searchRegionType)
         {
             List<PdfTextModel> extractedText = new List<PdfTextModel>();
+            VerticalPageList.Clear();
 
             using (PdfDocument document = PdfDocument.Open(pdfPath))
             {
@@ -45,7 +47,11 @@ namespace PdfProcessor.Services
                     pageNumber++;
                 }
             }
-            return extractedText;
+            return new PdfExtractionResult
+            {
+                ExtractedText = extractedText,
+                VerticalPages = VerticalPageList
+            };
         }
         private List<PdfTextModel> ExtractTextFromPage(Page page, int pageRotation, double pageWidth, 
             double pageHeight, int pageNumber, string searchRegionType)
@@ -110,7 +116,11 @@ namespace PdfProcessor.Services
                     
                     // Check word rotation
                     int wordRotation = DetermineWordRotation(word, bottomLeftX, bottomLeftY, topRightX, topRightY);
-
+                    
+                    // Check if the word falls within the search region
+                    if (!IsWithinRegion(bottomLeftX, bottomLeftY, topRightX, topRightY, searchRegion))
+                        continue;
+                    
                     if (wordRotation == 0)
                     {
                         zeroRotation++;
@@ -128,10 +138,6 @@ namespace PdfProcessor.Services
                         twoSeventyRotation++;
                     }
                     
-                    // Check if the word falls within the search region
-                    if (!IsWithinRegion(bottomLeftX, bottomLeftY, topRightX, topRightY, searchRegion))
-                        continue;
-                    
                     textModels.Add(new PdfTextModel(
                         word.Text,
                         bottomLeftX,
@@ -148,7 +154,12 @@ namespace PdfProcessor.Services
                     
                 }
             }
-            
+
+            if (zeroRotation - twoSeventyRotation < 20)
+            {
+                VerticalPageList.Add(pageNumber);
+                //Console.WriteLine($"Page: {pageNumber}      0:{zeroRotation}, 270:{twoSeventyRotation}");
+            }
             return textModels;
         }
         
@@ -237,5 +248,11 @@ namespace PdfProcessor.Services
                    wordY1 >= region.Bottom && wordY2 <= region.Top;
         }
         
+    }
+    
+    public class PdfExtractionResult
+    {
+        public List<PdfTextModel> ExtractedText { get; set; }
+        public List<int> VerticalPages { get; set; }
     }
 } 

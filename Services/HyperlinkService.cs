@@ -229,7 +229,6 @@ public class HyperlinkService
                         }
                         else
                         {
-                            Console.WriteLine($"{bowItem - 1}, {bowSheet}");
                             AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
                                 currentToPage, currentFromWidth, currentToWidth);
                             currentItem = bowItem;
@@ -237,7 +236,6 @@ public class HyperlinkService
                     }
                     else
                     {   
-                        Console.WriteLine($" last item {bowSheet - 1}");
                         AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
                             currentToPage, currentFromWidth, currentToWidth);
                         currentSheet = bowSheet;

@@ -26,6 +26,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Label and TextBox bill of wire -->
@@ -84,13 +85,22 @@
             <CheckBox Content="Create Hyperlinks"
                       FontSize="14" Margin="5"
                       IsChecked="{Binding CreateHyperlinks, Mode=TwoWay}"/>
-            <CheckBox Content="Rotate Vertical Drawings"
-                      FontSize="14" Margin="5"
-                      IsChecked="{Binding RotateVerticalDrawings, Mode=TwoWay}"/>
         </StackPanel>
         
+        <!-- Rotate/Revert Rotation Radio Buttons -->
+        <GroupBox Header="Vertical Drawings Rotation" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
+            <StackPanel>
+                <RadioButton Content="Rotate Drawings"
+                             FontSize="14" Margin="5"
+                             IsChecked="{Binding IsRotateVerticalDrawings, Mode=TwoWay}"/>
+                <RadioButton Content="Revert Rotation"
+                             FontSize="14" Margin="5"
+                             IsChecked="{Binding IsRevertVerticalDrawings, Mode=TwoWay}"/>
+            </StackPanel>
+        </GroupBox>
+        
         <!-- Process Button -->
-        <Button Grid.Row="5" 
+        <Button Grid.Row="6" 
                 Grid.Column="0" 
                 Grid.ColumnSpan="2"
                 Width="150"

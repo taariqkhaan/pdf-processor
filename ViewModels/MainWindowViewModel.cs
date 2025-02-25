@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Forms;
+using System.Windows.Data;
 using PdfProcessor.Models;
 using PdfProcessor.Services;
 
@@ -23,12 +24,15 @@ namespace PdfProcessor.ViewModels
         private bool _analyzeDatabase;
         private bool _processDrawing;
         private bool _createHyperlinks;
-        private bool _rotateVerticalDrawings;
+        private bool _isRotateVerticalDrawings;
+        private bool _isRevertVerticalDrawings;
         
         private readonly PdfTextService _pdfTextService;
         private string documentType;
+        private List<int> verticalPages;
         private Stopwatch stopwatch;
         private string _statusMessage;
+        
         
         public bool IsEnabled
         {
@@ -100,14 +104,24 @@ namespace PdfProcessor.ViewModels
                 ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
             }
         }
-        public bool RotateVerticalDrawings
+        public bool IsRotateVerticalDrawings
         {
-            get => _rotateVerticalDrawings;
+            get => _isRotateVerticalDrawings;
             set
             {
-                _rotateVerticalDrawings = value;
-                OnPropertyChanged(nameof(RotateVerticalDrawings));
-                ((RelayCommand)ProcessCommand).RaiseCanExecuteChanged();
+                _isRotateVerticalDrawings = value;
+                if (value) IsRevertVerticalDrawings = false;
+                OnPropertyChanged(nameof(IsRotateVerticalDrawings));
+            }
+        }
+        public bool IsRevertVerticalDrawings
+        {
+            get => _isRevertVerticalDrawings;
+            set
+            {
+                _isRevertVerticalDrawings = value;
+                if (value) IsRotateVerticalDrawings = false;
+                OnPropertyChanged(nameof(IsRevertVerticalDrawings));
             }
         }
 
@@ -121,7 +135,8 @@ namespace PdfProcessor.ViewModels
             BrowseDrawingsCommand = new RelayCommand(BrowseDrawings);
             ProcessCommand = new RelayCommand(async () => await Process(), 
                 () => IsEnabled && (ProcessBow || AnalyzeDatabase || 
-                                    ProcessDrawing || CreateHyperlinks || RotateVerticalDrawings));
+                                    ProcessDrawing || CreateHyperlinks || IsRotateVerticalDrawings
+                                    || IsRevertVerticalDrawings));
         }
 
         private void BrowseBow()
@@ -170,100 +185,109 @@ namespace PdfProcessor.ViewModels
             
             if (ProcessBow)
             {
+                StatusMessage = "Importing cable schedule to database...";
+                //---------------------------------------Extract text from cable schedule-------------------------------
+                
                 documentType = "BOW";
-
-                // Extract text 
-                List<PdfTextModel> extractedBowData = await Task.Run(() =>
+                var result = await Task.Run(() =>
                 {
                     PdfTextService pdfTextService = new PdfTextService();
                     return pdfTextService.ExtractTextAndCoordinates(BowPath, documentType);
                 });
+                List<PdfTextModel> extractedBowData = result.ExtractedText;
 
-                // Save text in CSV and DB format
+                // Save text to database
                 ExportService exportService = new ExportService();
                 // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
                 //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
                 await exportService.SaveToDatabase(extractedBowData, 
                     Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), documentType);
 
-                // Analyze the database
+                // Add tags to relevant texts
                 await Task.Run(() =>
                 {
                     CableScheduleService cableScheduleService = new CableScheduleService();
                     cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 });
-            }
-
-            if (RotateVerticalDrawings)
-            {
-                ComparisonLogic comparisonLogic = new ComparisonLogic();
-                comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-            }
-            
-            
-            if (ProcessDrawing)
-            {
+                
+                StatusMessage = "Importing drawings to database...";
+               //---------------------------------------Extract text from title block-----------------------------------
+               
                 documentType = "TITLE";
-                // Extract text 
-                List<PdfTextModel> extractedTitleData = await Task.Run(() =>
+                result = await Task.Run(() =>
                 {
                     PdfTextService pdfTextService = new PdfTextService();
                     return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
                 });
+                List<PdfTextModel> extractedTitleData = result.ExtractedText;
+                
                 
                 documentType = "DWG";
-                // Save text in DB format
-                ExportService exportService = new ExportService();
+                // Save text to database
+                exportService = new ExportService();
                 await exportService.SaveToDatabase(extractedTitleData, 
                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
                 
-                // Analyze the database
+                // Add tags to relevant texts
                 await Task.Run(() =>
                 {
                     DwgTitleService dwgTitleService = new DwgTitleService();
                     dwgTitleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
                 });
                 
-                // Extract text 
-                List<PdfTextModel> extractedDwgData = await Task.Run(() =>
+                //---------------------------------------Extract text from drawing area---------------------------------
+                result = await Task.Run(() =>
                 {
                     PdfTextService pdfTextService = new PdfTextService();
                     return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
                 });
+                List<PdfTextModel> extractedDwgData = result.ExtractedText;
+                verticalPages = result.VerticalPages;
                 
-                // Save text in DB format
+                // Save text to database
                 exportService = new ExportService();
                 // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
                 //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
                 await exportService.SaveToDatabase(extractedDwgData, 
                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
                 
-                // Analyze the database
+                // Add tags to relevant texts
                 await Task.Run(() =>
                 {
                     DrawingService drawingService = new DrawingService();
                     drawingService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
                 });
                 
-                
-            }
-            if (AnalyzeDatabase)
-            {
+                StatusMessage = "Comparing cable schedule to drawings...";
+                //----------------------------Compare cable schedule to drawings----------------------------------------
                 
                 ComparisonLogic comparisonLogic = new ComparisonLogic();
                 comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
 
                 //Highlight the drawing
-                 AnnotationService annotationService = new AnnotationService();
-                 annotationService.AnnotatePdf(DrawingsPath, "DWG");
-                 annotationService.AnnotatePdf(BowPath, "BOW");
-            }
-            if (CreateHyperlinks)
-            {
+                AnnotationService annotationService = new AnnotationService();
+                annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                annotationService.AnnotatePdf(BowPath, "BOW");
+                
+                StatusMessage = "Creating hyperlinks...";
+                //----------------------------Create hyperlinks---------------------------------------------------------
                 
                 HyperlinkService hyperlinkService = new HyperlinkService();
                 hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
+            }
+            if (IsRotateVerticalDrawings)
+            {
+                StatusMessage = "Rotating vertical drawings...";
+                PdfRotationService pdfRotationService = new PdfRotationService();
+                pdfRotationService.RotatePdfPages(DrawingsPath, verticalPages);
+                
+            }
+            if (IsRevertVerticalDrawings)
+            {
+                StatusMessage = "Reverting vertical drawings rotation...";
+                PdfRotationService pdfRotationService = new PdfRotationService();
+                pdfRotationService.RevertRotations(DrawingsPath);
             }
                 
             StatusMessage = "Processing success!";
@@ -298,4 +322,6 @@ namespace PdfProcessor.ViewModels
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+    
+
 }
