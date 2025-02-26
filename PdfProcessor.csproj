@@ -56,4 +56,11 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Resources\Icons\icon.ico" />
+      <Resource Include="Resources\Icons\icon.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Resource>
+    </ItemGroup>
+
 </Project>

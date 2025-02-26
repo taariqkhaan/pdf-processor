@@ -385,6 +385,19 @@ place the Word value on the input pdf using the Sheet number and X1, Y1 values a
 
 
 
+create a separate function that accepts the modified database.
+in the BOW_table look for by Tag = 'keymark', group all rows with identical corresponding Word value.
+make a list of the corresponding Sheet, Item.
+
+using the list of Sheet, Item,
+look for Tag = "length" with the same Sheet, Item., extract the corresponding Word value and add.
+
+repeat the same for the next unique Word with the Tag = keymark.
+
+at the end export .csv with the following columns. Keymark, Total lengths.
+save it the same folder as cable_summary.csv
+
+
 
 
 

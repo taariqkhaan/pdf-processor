@@ -9,7 +9,7 @@ namespace PdfProcessor.Services
         public void RotatePdfPages(string filePath, List<int> verticalPageList)
         {
             string pdfPath = System.IO.Path.Combine( System.IO.Path.GetDirectoryName(filePath)!, "highlighted_DWG.pdf");
-            if (!File.Exists(filePath))
+            if (!File.Exists(pdfPath))
             {
                 Console.WriteLine("Drawing PDF file not found.");
                 return;

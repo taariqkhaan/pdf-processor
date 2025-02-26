@@ -31,6 +31,8 @@ namespace PdfProcessor.ViewModels
         private List<int> verticalPages;
         private Stopwatch stopwatch;
         private string _statusMessage;
+        private bool qualityChecked = false;
+        private bool definedException = false;
         
         
         public bool IsEnabled
@@ -291,63 +293,61 @@ namespace PdfProcessor.ViewModels
                 HyperlinkService hyperlinkService = new HyperlinkService();
                 hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
-                //-----------------------Delete the database------------------------------------------------------------
-                // File.Delete(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                // Console.WriteLine("Database deleted successfully.");
+                //-----------------------Add keymarks to the cable schedule---------------------------------------------
+                CableDetailsService cableDetailsService = new CableDetailsService();
+                cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
                 
-            }
-            if (IsRotateVerticalDrawings)
-            {
-                StatusMessage = "Rotating vertical drawings...";
-                PdfRotationService pdfRotationService = new PdfRotationService();
-                pdfRotationService.RotatePdfPages(DrawingsPath, verticalPages);
-                
-            }
-            if (IsRevertVerticalDrawings)
-            {
-                StatusMessage = "Reverting vertical drawings rotation...";
-                PdfRotationService pdfRotationService = new PdfRotationService();
-                pdfRotationService.RevertRotations(DrawingsPath);
-            }
-            if (IsNoRotationDrawings)
-            {
-                StatusMessage = "Skipping vertical drawings rotation...";
-                Console.WriteLine($"Vertical pages rotation skipped");
+                qualityChecked = true;
+                definedException = false;
             }
 
+            if (qualityChecked)
+            {
+                if (CableSummary)
+                {
+                    //-----------------------Generate Cable summary---------------------------------------------
+                    CableSummaryService  cableSummaryService = new  CableSummaryService();
+                    cableSummaryService.GenerateCableSummaryCsv(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                    definedException = false;
+                }
+                if (IsRotateVerticalDrawings)
+                {
+                    StatusMessage = "Rotating vertical drawings...";
+                    PdfRotationService pdfRotationService = new PdfRotationService();
+                    pdfRotationService.RotatePdfPages(DrawingsPath, verticalPages);
+                    definedException = false;
+                }
+                if (IsRevertVerticalDrawings)
+                {
+                    StatusMessage = "Reverting vertical drawings rotation...";
+                    PdfRotationService pdfRotationService = new PdfRotationService();
+                    pdfRotationService.RevertRotations(DrawingsPath);
+                    definedException = false;
+                }
+                if (IsNoRotationDrawings)
+                {
+                    StatusMessage = "Skipping vertical drawings rotation...";
+                    Console.WriteLine($"Vertical pages rotation skipped");
+                    definedException = false;
+                }
+            }
+            else
+            {
+                StatusMessage = "Run quality check !!";
+                definedException = true;
+            }
             if (Test1)
             {
-                documentType = "BOW";
-                var result = await Task.Run(() =>
-                {
-                    PdfTextService pdfTextService = new PdfTextService();
-                    return pdfTextService.ExtractTextAndCoordinates(BowPath, documentType);
-                });
-                List<PdfTextModel> extractedBowData = result.ExtractedText;
-
-                // Save text to database
-                ExportService exportService = new ExportService();
-                // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
-                //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
-                await exportService.SaveToDatabase(extractedBowData,
-                    Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), documentType);
                 
-                // Add tags to relevant texts
-                await Task.Run(() =>
-                {
-                    CableScheduleService cableScheduleService = new CableScheduleService();
-                    cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                });
-                
-                //Add tags to relevant texts
-                await Task.Run(() =>
-                {
-                    CableDetailsService cableDetailsService = new CableDetailsService();
-                    cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
-                });
             }
-                
-            StatusMessage = "Processing success!";
+
+            if (!definedException)
+            {
+                StatusMessage = "Processing success!";
+            }
+            //-----------------------Delete the database------------------------------------------------------------
+            // File.Delete(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+            // Console.WriteLine("Database deleted successfully.");
             IsEnabled = true;
         }
         

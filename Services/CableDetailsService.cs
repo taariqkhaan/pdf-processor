@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.IO;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas;
@@ -14,17 +12,17 @@ namespace PdfProcessor.Services
     {
         private readonly string _socoCablesDbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
             "Resources", "Database", "soco_cables_list.db");
-        
-        public void ProcessDatabase(string dbFilePath, string inputPdfPath)
+        public void ProcessDatabase(string dbFilePath, string pdfPath)
         {
-            if (!File.Exists(dbFilePath) || !File.Exists(_socoCablesDbPath) || !File.Exists(inputPdfPath))
+            if (!File.Exists(dbFilePath) || !File.Exists(_socoCablesDbPath) || !File.Exists(pdfPath))
             {
                 Console.WriteLine("One or more required files not found.");
                 return;
             }
 
             // Define the output PDF path in the same folder as the input PDF
-            string outputPdfPath = Path.Combine(Path.GetDirectoryName(inputPdfPath), "bow_with_keymarks.pdf");
+            string inputPdfPath = Path.Combine(Path.GetDirectoryName(pdfPath), "highlighted_BOW.pdf");
+            string outputPdfPath = inputPdfPath + ".tmp";
 
             using var conn = new SQLiteConnection($"Data Source={dbFilePath};Version=3;");
             conn.Open();
@@ -40,12 +38,11 @@ namespace PdfProcessor.Services
 
             // Overlay keymark values onto the PDF
             OverlayKeymarksOnPdf(conn, inputPdfPath, outputPdfPath);
-
+            
             conn.Close();
 
             Console.WriteLine($"Output PDF with keymarks saved at: {outputPdfPath}");
         }
-
         private List<CableEntry> ExtractBowCablesList(SQLiteConnection conn)
         {
             var bowCablesList = new List<CableEntry>();
@@ -207,7 +204,7 @@ namespace PdfProcessor.Services
                     var page = pdfDocument.GetPage(pageNumber);
                     var canvas = new PdfCanvas(page);
                     canvas.BeginText()
-                        .SetFontAndSize(keymarkFont, 12)
+                        .SetFontAndSize(keymarkFont, 11)
                         .SetColor(ColorConstants.RED, true)
                         .MoveText((float)x1, (float)y1)
                         .ShowText(word)
@@ -216,9 +213,15 @@ namespace PdfProcessor.Services
             }
 
             pdfDocument.Close();
+            
+            // Overwrite the original file
+            File.Delete(inputPdfPath);
+            File.Move(outputPdfPath, inputPdfPath);
         }
+        
+        
+        
     }
-
     public class CableEntry
     {
         public string? KeyMark { get; set; }
