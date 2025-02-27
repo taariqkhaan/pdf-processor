@@ -11,7 +11,6 @@ public class DwgTitleService
             "facility_name", "facility_id", "dwg_title1","dwg_title2", "dwg_scale", "dwg_size", "dwg_number", "dwg_sheet",
             "dwg_rev", "dwg_type"
         };
-
         public void ProcessDatabase(string dbFilePath)
         {
             if (!File.Exists(dbFilePath))
@@ -36,34 +35,97 @@ public class DwgTitleService
                 Console.WriteLine($"Error processing database: {ex.Message}");
             }
         }
-        
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
-            // Gather min X1 and max Y1 for each sheet in advance
+            
+            // Dictionary to store the required MinX and MaxY values per sheet
             var sheetBounds = new Dictionary<int, (double MinX, double MaxY)>();
 
-            string boundsQuery = @"
-                SELECT
-                    Sheet,
-                    MIN(X1) AS MinX,
-                    MAX(Y1) AS MaxY
-                FROM DWG_table
-                GROUP BY Sheet
-            ";
+            // Retrieve all distinct sheets
+            string sheetQuery = "SELECT DISTINCT Sheet FROM DWG_table";
+            var sheets = new List<int>();
 
-            using (var boundsCmd = new SQLiteCommand(boundsQuery, connection))
-            using (var boundsReader = boundsCmd.ExecuteReader())
+            using (var sheetCmd = new SQLiteCommand(sheetQuery, connection))
+            using (var sheetReader = sheetCmd.ExecuteReader())
             {
-                while (boundsReader.Read())
+                while (sheetReader.Read())
                 {
-                    int sheetNumber = boundsReader.GetInt32(0);
-                    double minX = boundsReader.IsDBNull(1) ? 0 : boundsReader.GetDouble(1);
-                    double maxY = boundsReader.IsDBNull(2) ? 0 : boundsReader.GetDouble(2);
+                    sheets.Add(sheetReader.GetInt32(0));
+                }
+            }
 
-                    sheetBounds[sheetNumber] = (minX, maxY);
+            // Process each sheet individually
+            foreach (int sheet in sheets)
+            {
+                string findFacilityQuery = @"
+                    SELECT X1, Y1 
+                    FROM DWG_table 
+                    WHERE Sheet = @Sheet 
+                    ORDER BY X1 ASC
+                ";
+
+                using (var facilityCmd = new SQLiteCommand(findFacilityQuery, connection))
+                {
+                    facilityCmd.Parameters.AddWithValue("@Sheet", sheet);
+
+                    using (var facilityReader = facilityCmd.ExecuteReader())
+                    {
+                        while (facilityReader.Read())
+                        {
+                            double x1 = facilityReader.IsDBNull(0) ? 0 : facilityReader.GetDouble(0);
+                            double y1 = facilityReader.IsDBNull(1) ? 0 : facilityReader.GetDouble(1);
+
+                            // Check if this row has "FACILITY" in the Word column
+                            string checkWordQuery = @"
+                                SELECT COUNT(*) 
+                                FROM DWG_table 
+                                WHERE Sheet = @Sheet AND X1 = @X1 AND Word = 'FACILITY'
+                            ";
+
+                            using (var checkCmd = new SQLiteCommand(checkWordQuery, connection))
+                            {
+                                checkCmd.Parameters.AddWithValue("@Sheet", sheet);
+                                checkCmd.Parameters.AddWithValue("@X1", x1);
+
+                                int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                                if (count > 0)
+                                {
+                                    // Store MinX and MaxY for this sheet
+                                    sheetBounds[sheet] = (x1, y1);
+                                    break; // Stop once we find the first "FACILITY"
+                                }
+                            }
+                        }
+                    }
                 }
             }
             
+            // // Gather min X1 and max Y1 for each sheet in advance
+            // var sheetBounds = new Dictionary<int, (double MinX, double MaxY)>();
+            //
+            // string boundsQuery = @"
+            //     SELECT
+            //         Sheet,
+            //         MIN(X1) AS MinX,
+            //         MAX(Y1) AS MaxY
+            //     FROM DWG_table
+            //     GROUP BY Sheet
+            // ";
+            //
+            // using (var boundsCmd = new SQLiteCommand(boundsQuery, connection))
+            // using (var boundsReader = boundsCmd.ExecuteReader())
+            // {
+            //     while (boundsReader.Read())
+            //     {
+            //         int sheetNumber = boundsReader.GetInt32(0);
+            //         double minX = boundsReader.IsDBNull(1) ? 0 : boundsReader.GetDouble(1);
+            //         double maxY = boundsReader.IsDBNull(2) ? 0 : boundsReader.GetDouble(2);
+            //
+            //         sheetBounds[sheetNumber] = (minX, maxY);
+            //     }
+            // }
+            //
             string selectQuery = @"
                 SELECT rowid, X1, Y1, Sheet
                 FROM DWG_table
@@ -139,14 +201,8 @@ public class DwgTitleService
                 }
             }
         }
-        
-        private void MissingTag(
-            SQLiteConnection connection,
-            HashSet<string> existingTags,
-            int sheetNumber,
-            double x1_current,
-            double y1_current
-        )
+        private void MissingTag(SQLiteConnection connection, HashSet<string> existingTags, int sheetNumber,
+            double x1_current, double y1_current)
         {
             
             // For convenience, a local function that inserts a row
@@ -229,7 +285,6 @@ public class DwgTitleService
                 }
             }
         }
-        
         private string IsValidTag(double x1, double y1, ref double x1_current, ref double y1_current)
     {
         double x1_relative = Math.Abs(x1_current - x1);
@@ -250,7 +305,6 @@ public class DwgTitleService
                  _ => string.Empty
             };
     }
-    
         private void DeleteNullRows(SQLiteConnection connection)
         {
             var deleteQuery = @"
@@ -261,7 +315,6 @@ public class DwgTitleService
             using var cmd = new SQLiteCommand(deleteQuery, connection);
             cmd.ExecuteNonQuery();
         }
-        
         private void UpdateColorFlag(SQLiteConnection connection)
         {
             string updateQuery = @"

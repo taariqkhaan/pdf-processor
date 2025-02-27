@@ -256,54 +256,54 @@ namespace PdfProcessor.ViewModels
                 });
                 
                 //-------------------------------highlight region in a pdf----------------------------------------------
-                RegionHighlightService regionHighlightService = new RegionHighlightService();
-                regionHighlightService.HighlightRegion(DrawingsPath, "TITLE");
+                // RegionHighlightService regionHighlightService = new RegionHighlightService();
+                // regionHighlightService.HighlightRegion(DrawingsPath, "TITLE");
                 
                  //---------------------------------------Extract text from drawing area---------------------------------
-                //  result = await Task.Run(() =>
-                //  {
-                //      PdfTextService pdfTextService = new PdfTextService();
-                //      return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
-                //  });
-                //  List<PdfTextModel> extractedDwgData = result.ExtractedText;
-                //  verticalPages = result.VerticalPages;
-                //
-                //  // Save text to database
-                //  exportService = new ExportService();
-                //  // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
-                //  //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
-                //  await exportService.SaveToDatabase(extractedDwgData, 
-                //      Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
-                //
-                //  // Add tags to relevant texts
-                //  await Task.Run(() =>
-                //  {
-                //      DrawingService drawingService = new DrawingService();
-                //      drawingService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
-                //  });
-                //
-                //  StatusMessage = "Comparing cable schedule to drawings...";
-                //  //----------------------------Compare cable schedule to drawings----------------------------------------
-                //
-                //  ComparisonLogic comparisonLogic = new ComparisonLogic();
-                //  comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                //
-                //  //Highlight the drawing
-                //  AnnotationService annotationService = new AnnotationService();
-                //  annotationService.AnnotatePdf(DrawingsPath, "DWG");
-                //  annotationService.AnnotatePdf(BowPath, "BOW");
-                //
-                //  StatusMessage = "Creating hyperlinks...";
-                //  //----------------------------Create hyperlinks---------------------------------------------------------
-                //
-                //  HyperlinkService hyperlinkService = new HyperlinkService();
-                //  hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                //
-                //  //-----------------------Add keymarks to the cable schedule---------------------------------------------
-                //  CableDetailsService cableDetailsService = new CableDetailsService();
-                //  cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
-                //
-                // qualityChecked = true;
+                 result = await Task.Run(() =>
+                 {
+                     PdfTextService pdfTextService = new PdfTextService();
+                     return pdfTextService.ExtractTextAndCoordinates(DrawingsPath, documentType);
+                 });
+                 List<PdfTextModel> extractedDwgData = result.ExtractedText;
+                 verticalPages = result.VerticalPages;
+                
+                 // Save text to database
+                 exportService = new ExportService();
+                 // exportService.SaveToCsv(extractedBowData, Path.Combine(Path.GetDirectoryName(BowPath), 
+                 //     Path.GetFileNameWithoutExtension(BowPath) + ".csv"));
+                 await exportService.SaveToDatabase(extractedDwgData, 
+                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
+                
+                 // Add tags to relevant texts
+                 await Task.Run(() =>
+                 {
+                     DrawingService drawingService = new DrawingService();
+                     drawingService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"));
+                 });
+                
+                 StatusMessage = "Comparing cable schedule to drawings...";
+                 //----------------------------Compare cable schedule to drawings----------------------------------------
+                
+                 ComparisonLogic comparisonLogic = new ComparisonLogic();
+                 comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                
+                 //Highlight the drawing
+                 AnnotationService annotationService = new AnnotationService();
+                 annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                 annotationService.AnnotatePdf(BowPath, "BOW");
+                
+                 StatusMessage = "Creating hyperlinks...";
+                 //----------------------------Create hyperlinks---------------------------------------------------------
+                
+                 HyperlinkService hyperlinkService = new HyperlinkService();
+                 hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+                
+                 //-----------------------Add keymarks to the cable schedule---------------------------------------------
+                 CableDetailsService cableDetailsService = new CableDetailsService();
+                 cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
+                
+                qualityChecked = true;
                 definedException = false;
             }
 
