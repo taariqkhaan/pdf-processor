@@ -101,7 +101,7 @@ namespace PdfProcessor.Services
 
             // Check if the word falls within the search region
             PdfRectangle searchRegion = _regionService.GetRegionByName(searchRegionType, pageWidth, pageHeight, 
-                pageRotation, lowestBottomLeftX,lowestBottomLeftY, highestTopRightY);
+                pageRotation, lowestBottomLeftX,lowestBottomLeftY, highestTopRightX, highestTopRightY);
             
             foreach (Word word in words)
             {
@@ -159,7 +159,6 @@ namespace PdfProcessor.Services
             if (zeroRotation - twoSeventyRotation < 20)
             {
                 VerticalPageList.Add(pageNumber);
-                //Console.WriteLine($"Page: {pageNumber}      0:{zeroRotation}, 270:{twoSeventyRotation}");
             }
             return textModels;
         }
@@ -243,7 +242,8 @@ namespace PdfProcessor.Services
             return 0;
         }
         
-        private bool IsWithinRegion(double wordX1, double wordY1, double wordX2, double wordY2, PdfRectangle region)
+        private bool IsWithinRegion(double wordX1, double wordY1, double wordX2, double wordY2, 
+            PdfRectangle region)
         {
             return wordX1 >= region.Left && wordX2 <= region.Right &&
                    wordY1 >= region.Bottom && wordY2 <= region.Top;

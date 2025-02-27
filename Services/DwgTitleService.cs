@@ -37,7 +37,6 @@ public class DwgTitleService
             }
         }
         
-
         private void UpdateRowsBasedOnConditions(SQLiteConnection connection)
         {
             // Gather min X1 and max Y1 for each sheet in advance

@@ -263,7 +263,7 @@ public class ComparisonLogic
                 int sheet = Convert.ToInt32(reader["Sheet"]);
                 int item = Convert.ToInt32(reader["Item"]);
                 string tag = reader["Tag"].ToString();
-                string word = reader["Word"].ToString();
+                string word = reader["Word"].ToString().Trim();
         
                 // If we move to a new sheet or item, save the previous entry
                 if (sheet != currentSheet || item != currentItem)
@@ -295,7 +295,7 @@ public class ComparisonLogic
                 switch (tag)
                 {
                     case "cable_tag":
-                        currentCableTag = word;
+                        currentCableTag += "" + word;
                         break;
                     case "from_ref":
                         currentFromRef = word.Replace("(", "").Replace(")", "");

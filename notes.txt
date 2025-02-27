@@ -402,7 +402,23 @@ save it the same folder as cable_summary.csv
 
 
 
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Annot;
+using iText.Kernel.Colors;
+using iText.Kernel.Geom;
 
+
+namespace PdfProcessor.Services;
+
+public class RegionHighlightService
+{
+    public void HighlightRegion(PdfRectangle uglyRect, pdfpath)
+    {
+    
+write using .net 8.0 that accepts PdfRectangle pdfpig rectangle called uglyRect and path to the input pdf. overlays a yellow rectangle
+using itext7 PdfSquareAnnotation annotation
+
+saves the pdf in the same folder as region_highlighted.pdf
 
 
 

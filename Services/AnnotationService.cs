@@ -1,13 +1,10 @@
-﻿using System;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.IO;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Annot;
 using iText.Kernel.Colors;
 using iText.Kernel.Geom;
-using iText.Kernel.Pdf.Canvas;
-using iText.Kernel.Font;
-using iText.IO.Font.Constants;
+
 
 namespace PdfProcessor.Services;
 
