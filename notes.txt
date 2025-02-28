@@ -421,4 +421,16 @@ using itext7 PdfSquareAnnotation annotation
 saves the pdf in the same folder as region_highlighted.pdf
 
 
+if(condition)
+{
+method 1;
+method 2;
 
+//i want to exit here without processing below
+
+method 3;
+method 4;
+
+}
+
+//i wanna come here 

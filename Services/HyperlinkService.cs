@@ -21,6 +21,8 @@ public class HyperlinkService
     double currentToY1 = 5000;
     double currentToX2 = 0;
     double currentToY2 = 0;
+    bool fromRefFound = false;
+    bool toRefFound = false;
     private string tempBowPath = null;
     
     public void HyperlinkMain(string dbFilePath)
@@ -111,7 +113,7 @@ public class HyperlinkService
                     if (bowTag == "from_ref" || bowTag == "to_ref")
                     {
                         bowWord = bowWord.Replace("(", "").Replace(")", "");
-                        
+
                         string sqlCableTag = @"
                         SELECT Word FROM BOW_table 
                         WHERE Tag = 'cable_tag' AND Item = @ItemNumber AND Sheet = @SheetNumber
@@ -128,8 +130,20 @@ public class HyperlinkService
                         // Search for the Word in DWG_table to find its corresponding Sheet
                         int? dwgSheetFound = GetSheetForWord(connection, bowWord);
                         if (dwgSheetFound == null)
+                        {
+                            if (bowTag == "from_ref")
+                            {
+                                fromRefFound = false;
+                            }
+                            if (bowTag == "to_ref")
+                            {
+                                toRefFound = false;
+                            }
                             continue;
+                        }
+                            
                         PdfPage dwgPage = dwgPdfDoc.GetPage(dwgSheetFound.Value);
+                        
                         Rectangle pageSize = dwgPage.GetPageSize();
                         dwgWidth = pageSize.GetWidth();
                         dwgHeight = pageSize.GetHeight();
@@ -140,11 +154,13 @@ public class HyperlinkService
                         {
                             currentFromPage = dwgSheetFound.Value;
                             currentFromWidth = dwgWidth;
+                            fromRefFound = true;
                         }
                         if (bowTag == "to_ref")
                         {
                             currentToPage = dwgSheetFound.Value;
                             currentToWidth = dwgWidth;
+                            toRefFound = true;
                         }
                         
                         // Look for Tag = "cable_tag" in DWG_table with that sheet
@@ -210,7 +226,16 @@ public class HyperlinkService
                                 if (currentFromX2 <= bowX2)
                                 {
                                     currentFromX2 = bowX2;
-                                    currentFromY2 = bowY2;
+
+                                    if (Math.Abs(bowY2 - currentFromY1) > 4)
+                                    {
+                                        currentFromY2 = bowY2;
+                                    }
+                                    else
+                                    {
+                                        currentFromY2 = bowY1 + 5.77;
+                                    }
+                                    
                                 }
                             }
                             if (bowTag == "to_desc")
@@ -223,25 +248,62 @@ public class HyperlinkService
                                 if (currentToX2 <= bowX2)
                                 {
                                     currentToX2 = bowX2;
-                                    currentToY2 = bowY2;
+                                    if (Math.Abs(bowY2 - currentToY1) > 4)
+                                    {
+                                        currentToY2 = bowY2;
+                                    }
+                                    else
+                                    {
+                                        currentToY2 = bowY1 + 5.77;
+                                    }
                                 }
+                                
                             }
-                            
                         }
                         else
                         {
-                            AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
-                                currentToPage, currentFromWidth, currentToWidth);
+                            if (fromRefFound)
+                            {
+                                AddFromLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
+                                    currentFromWidth);
+                            }
+                            if (toRefFound)
+                            {
+                                AddToLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentToPage, 
+                                    currentToWidth);
+                            }
                             currentItem = bowItem;
+                            ResetCurrentCoordinates();
                         }
                     }
                     else
                     {   
-                        AddPdfLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
-                            currentToPage, currentFromWidth, currentToWidth);
+                        if (fromRefFound)
+                        {
+                            AddFromLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
+                                currentFromWidth);
+                        }
+                        if (toRefFound)
+                        {
+                            AddToLinkAnnotation(bowPdfDoc, currentSheet, fileSpec,
+                                currentToPage, currentToWidth);
+                        }
                         currentSheet = bowSheet;
                         currentItem = bowItem;
+                        ResetCurrentCoordinates();
                     }
+                }
+                
+                //hyperlink description for the last item of the last sheet
+                if (fromRefFound)
+                {
+                    AddFromLinkAnnotation(bowPdfDoc, currentSheet, fileSpec, currentFromPage, 
+                        currentFromWidth);
+                }
+                if (toRefFound)
+                {
+                    AddToLinkAnnotation(bowPdfDoc, currentSheet, fileSpec,
+                        currentToPage, currentToWidth);
                 }
             }
             
@@ -300,11 +362,23 @@ public class HyperlinkService
         }
         return null;
     }
-    private void AddPdfLinkAnnotation(PdfDocument bowPdfDoc, int currentSheet, PdfFileSpec fileSpec, 
-        int currentFromPage, int currentToPage, float currentFromWidth, float currentToWidth)
+    private void AddFromLinkAnnotation(PdfDocument bowPdfDoc, int currentSheet, PdfFileSpec fileSpec, 
+        int currentFromPage, float currentFromWidth)
     {
-        
-        
+        var page = bowPdfDoc.GetPage(currentSheet);
+
+        // Add 'From' Reference Link
+        float linkWidth = (float)Math.Abs(currentFromX2 - currentFromX1);
+        float linkHeight = (float)Math.Abs(currentFromY2 - currentFromY1);
+        Rectangle linkLocation = new Rectangle((float)currentFromX1, (float)currentFromY1, linkWidth, linkHeight);
+        PdfLinkAnnotation linkAnnotation = new PdfLinkAnnotation(linkLocation);
+        PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(currentFromPage, currentFromWidth - 500, 110, 1.0f);
+        linkAnnotation.SetAction(PdfAction.CreateGoToR(fileSpec, destination, false));
+        page.AddAnnotation(linkAnnotation);
+    }
+    private void AddToLinkAnnotation(PdfDocument bowPdfDoc, int currentSheet, PdfFileSpec fileSpec, 
+         int currentToPage, float currentToWidth)
+    {
         var page = bowPdfDoc.GetPage(currentSheet);
         
         // Add 'To' Reference Link
@@ -315,21 +389,19 @@ public class HyperlinkService
         PdfDestination destination = PdfExplicitRemoteGoToDestination.CreateXYZ(currentToPage, currentToWidth - 500, 110, 1.0f);
         linkAnnotation.SetAction(PdfAction.CreateGoToR(fileSpec, destination, false));
         page.AddAnnotation(linkAnnotation);
-        
-
-        // Add 'From' Reference Link
-        linkWidth = (float)Math.Abs(currentFromX2 - currentFromX1);
-        linkHeight = (float)Math.Abs(currentFromY2 - currentFromY1);
-        linkLocation = new Rectangle((float)currentFromX1, (float)currentFromY1, linkWidth, linkHeight);
-        linkAnnotation = new PdfLinkAnnotation(linkLocation);
-        destination = PdfExplicitRemoteGoToDestination.CreateXYZ(currentFromPage, currentFromWidth - 500, 110, 1.0f);
-        linkAnnotation.SetAction(PdfAction.CreateGoToR(fileSpec, destination, false));
-        page.AddAnnotation(linkAnnotation);
-        
-        currentFromX1 = currentToX1 = 5000;
-        currentFromY1 = currentToY1 = 5000;
-        currentFromX2 = currentToX2 = 0;
-        currentFromY2 = currentToY2 = 0;
     }
-    
+    private void ResetCurrentCoordinates()
+    {
+        currentFromX1 = 5000;
+        currentFromY1 = 5000;
+        currentFromX2 = 0;
+        currentFromY2 = 0;
+        currentToX1 = 5000;
+        currentToY1 = 5000;
+        currentToX2 = 0;
+        currentToY2 = 0;
+        
+        toRefFound = false;
+        fromRefFound = false;
+    }
 }

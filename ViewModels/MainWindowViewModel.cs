@@ -183,6 +183,11 @@ namespace PdfProcessor.ViewModels
             }
         }
         
+        private void FileIsAccessible(string filePath)
+        {
+            using FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+        }
+        
         private async Task Process()
         {
             IsEnabled = false;
@@ -203,7 +208,7 @@ namespace PdfProcessor.ViewModels
             
             if (QualityCheck)
             {
-                StatusMessage = "Importing cable schedule to database...";
+                StatusMessage = "Processing cable schedule...";
                 //---------------------------------------Extract text from cable schedule-------------------------------
                 
                 documentType = "BOW";
@@ -228,7 +233,7 @@ namespace PdfProcessor.ViewModels
                     cableScheduleService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 });
                 
-                StatusMessage = "Importing drawings to database...";
+                StatusMessage = "Processing drawings...";
                //---------------------------------------Extract text from title block-----------------------------------
                
                 documentType = "TITLE";
@@ -243,8 +248,8 @@ namespace PdfProcessor.ViewModels
                 documentType = "DWG";
                 // Save text to database
                 exportService = new ExportService();
-                exportService.SaveToCsv(extractedTitleData, Path.Combine(Path.GetDirectoryName(DrawingsPath), 
-                    Path.GetFileNameWithoutExtension(DrawingsPath) + ".csv"));
+                // exportService.SaveToCsv(extractedTitleData, Path.Combine(Path.GetDirectoryName(DrawingsPath), 
+                //     Path.GetFileNameWithoutExtension(DrawingsPath) + ".csv"));
                 await exportService.SaveToDatabase(extractedTitleData, 
                     Path.Combine(Path.GetDirectoryName(DrawingsPath), "data.db"), documentType);
                 
@@ -288,21 +293,93 @@ namespace PdfProcessor.ViewModels
                  ComparisonLogic comparisonLogic = new ComparisonLogic();
                  comparisonLogic.CompareDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
                 
-                 //Highlight the drawing
-                 AnnotationService annotationService = new AnnotationService();
-                 annotationService.AnnotatePdf(DrawingsPath, "DWG");
-                 annotationService.AnnotatePdf(BowPath, "BOW");
-                
+                 
+                 string outputBowPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(BowPath), 
+                     $"highlighted_BOW.pdf");
+                 string outputDwgPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(DrawingsPath), 
+                     $"highlighted_DWG.pdf");
+
+
+                 if (!File.Exists(outputBowPath))
+                 {
+                     Console.WriteLine($"BOW doesn't exist");
+                     if (!File.Exists(outputDwgPath))
+                     { Console.WriteLine($"DWG doesn't exist");
+                         //----------------------------Highlight PDFs---------------------------------------------------
+                         AnnotationService annotationService = new AnnotationService();
+                         annotationService.AnnotatePdf(BowPath, "BOW");
+                         annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                     }
+                     else
+                     {Console.WriteLine($"DWG exists");
+                         try
+                         {
+                             FileIsAccessible(outputDwgPath);
+                             Console.WriteLine($"DWG is accessible");
+                             //----------------------------Highlight PDFs---------------------------------------------------
+                             AnnotationService annotationService = new AnnotationService();
+                             annotationService.AnnotatePdf(BowPath, "BOW");
+                             annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                         }
+                         catch (IOException)
+                         {
+                             StatusMessage = "Highlighted PDFs are open! Close PDFs before continuing.";
+                             IsEnabled = true;
+                             return;
+                         }
+                     }
+                 }
+                 else
+                 {Console.WriteLine($"BOW exists");
+                     try
+                     {
+                         FileIsAccessible(outputBowPath);
+                         Console.WriteLine($"BOW is accessible");
+                         
+                         if (!File.Exists(outputDwgPath))
+                         {Console.WriteLine($"DWG doesn't exist");
+                             //----------------------------Highlight PDFs---------------------------------------------------
+                             AnnotationService annotationService = new AnnotationService();
+                             annotationService.AnnotatePdf(BowPath, "BOW");
+                             annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                         }
+                         else
+                         {Console.WriteLine($"DWG exists");
+                             try
+                             {
+                                 FileIsAccessible(outputDwgPath);
+                                 Console.WriteLine($"DWG is accessible");
+                                 //----------------------------Highlight PDFs---------------------------------------------------
+                                 AnnotationService annotationService = new AnnotationService();
+                                 annotationService.AnnotatePdf(BowPath, "BOW");
+                                 annotationService.AnnotatePdf(DrawingsPath, "DWG");
+                             }
+                             catch (IOException)
+                             {
+                                 StatusMessage = "Highlighted PDFs are open! Close PDFs before continuing.";
+                                 IsEnabled = true;
+                                 return;
+                             }
+                         }
+                     }
+                     catch (IOException)
+                     {
+                         StatusMessage = "Highlighted PDFs are open! Close PDFs before continuing.";
+                         IsEnabled = true;
+                         return;
+                     }
+                 }
+                 
                  StatusMessage = "Creating hyperlinks...";
-                 //----------------------------Create hyperlinks---------------------------------------------------------
-                
+                 //----------------------------Create hyperlinks----------------------------------------------------
+            
                  HyperlinkService hyperlinkService = new HyperlinkService();
                  hyperlinkService.HyperlinkMain(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-                
-                 //-----------------------Add keymarks to the cable schedule---------------------------------------------
+            
+                 //-----------------------Add keymarks to the cable schedule----------------------------------------
                  CableDetailsService cableDetailsService = new CableDetailsService();
                  cableDetailsService.ProcessDatabase(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"), BowPath);
-                
+                     
                 qualityChecked = true;
                 definedException = false;
             }
@@ -352,8 +429,8 @@ namespace PdfProcessor.ViewModels
                 StatusMessage = "Processing success!";
             }
             //-----------------------Delete the database------------------------------------------------------------
-            // File.Delete(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
-            // Console.WriteLine("Database deleted successfully.");
+            File.Delete(Path.Combine(Path.GetDirectoryName(BowPath), "data.db"));
+            Console.WriteLine("Database deleted successfully.");
             IsEnabled = true;
         }
         
