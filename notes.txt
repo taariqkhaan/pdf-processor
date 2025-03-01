@@ -485,3 +485,7 @@ method 4;
     </ItemGroup>
 
 </Project>
+
+
+
+ Icon="pack://application:,,,/Resources/Icons/icon.ico"

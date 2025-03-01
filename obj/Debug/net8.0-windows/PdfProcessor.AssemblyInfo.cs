@@ -10,13 +10,15 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("PdfProcessor")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("Burns & McDonnell")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41e1abe14c86db42b89a744becb509fb88bf7dfd")]
-[assembly: System.Reflection.AssemblyProductAttribute("PdfProcessor")]
-[assembly: System.Reflection.AssemblyTitleAttribute("PdfProcessor")]
-[assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
+[assembly: System.Reflection.AssemblyCopyrightAttribute("© 2025 Burns & McDonnell. All rights reserved.")]
+[assembly: System.Reflection.AssemblyDescriptionAttribute("Quality check tool for Souther Company Bill of Wire")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("2.0.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0.0+2d2e8274d8ceabb0708bd218096663805b29ef8b")]
+[assembly: System.Reflection.AssemblyProductAttribute("Bill of Wire Quality Check")]
+[assembly: System.Reflection.AssemblyTitleAttribute("BOWQC")]
+[assembly: System.Reflection.AssemblyVersionAttribute("2.0.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
 
