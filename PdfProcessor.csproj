@@ -7,7 +7,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
     </PropertyGroup>
-
+    
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <PlatformTarget>x64</PlatformTarget>
     </PropertyGroup>
@@ -21,8 +21,6 @@
       <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
       <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
       <PackageReference Include="PdfPig" Version="0.1.10-alpha-20250209-1660c" />
-      <PackageReference Include="PDFsharp-GDI" Version="6.1.1" />
-      <PackageReference Include="PdfSharpCore" Version="1.3.65" />
       <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
       <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
     </ItemGroup>
@@ -36,21 +34,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Resources\arial.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\Fonts\arial.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\Fonts\arialbd.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\Fonts\arialbi.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\Fonts\ariali.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
       <None Update="Resources\Database\soco_cables_list.db">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
@@ -62,5 +45,7 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Resource>
     </ItemGroup>
-
+    
 </Project>
+
+

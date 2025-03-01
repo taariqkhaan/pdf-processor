@@ -434,3 +434,54 @@ method 4;
 }
 
 //i wanna come here 
+---------------------------------------------------------------------------------------------------------------------------
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="itext7" Version="9.1.0" />
+      <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
+      <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
+      <PackageReference Include="PdfPig" Version="0.1.10-alpha-20250209-1660c" />
+      <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+      <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Page Update="Views\MainWindow.xaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Wpf</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Resources\Database\soco_cables_list.db">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Icons\icon.ico" />
+      <Resource Include="Resources\Icons\icon.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Resource>
+    </ItemGroup>
+
+</Project>

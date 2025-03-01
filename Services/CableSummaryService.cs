@@ -7,7 +7,7 @@ namespace PdfProcessor.Services;
 
 public class CableSummaryService
 {
-    public void GenerateCableSummaryCsv(string dbFilePath)
+    public void GenerateCableSummaryCsv(string dbFilePath, string outputFilePath)
         {
             if (!File.Exists(dbFilePath))
             {
@@ -15,7 +15,7 @@ public class CableSummaryService
                 return;
             }
             // Define the CSV output path in the same folder as the database
-            string outputCsvPath = Path.Combine(Path.GetDirectoryName(dbFilePath), "cable_summary.csv");
+            string outputCsvPath = Path.Combine(Path.GetDirectoryName(outputFilePath), "cable_summary.csv");
             
             using var conn = new SQLiteConnection($"Data Source={dbFilePath};Version=3;");
             conn.Open();

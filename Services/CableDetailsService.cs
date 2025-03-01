@@ -204,8 +204,8 @@ namespace PdfProcessor.Services
                     var page = pdfDocument.GetPage(pageNumber);
                     var canvas = new PdfCanvas(page);
                     canvas.BeginText()
-                        .SetFontAndSize(keymarkFont, 11)
-                        .SetColor(ColorConstants.RED, true)
+                        .SetFontAndSize(keymarkFont, 10)
+                        .SetColor(ColorConstants.BLUE, true)
                         .MoveText((float)x1, (float)y1)
                         .ShowText(word)
                         .EndText();

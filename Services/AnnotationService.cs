@@ -10,15 +10,14 @@ namespace PdfProcessor.Services;
 
 public class AnnotationService
 {
-    public void AnnotatePdf(string pdfPath, string key)
+    public void AnnotatePdf(string pdfPath, string dbPath, string key)
     {
         if (!File.Exists(pdfPath))
         {
             Console.WriteLine("PDF file not found.");
             return;
         }
-
-        string dbPath = System.IO.Path.Combine( System.IO.Path.GetDirectoryName(pdfPath)!, "data.db");
+        
         if (!File.Exists(dbPath))
         {
             Console.WriteLine("Database file not found.");

@@ -25,10 +25,10 @@ public class HyperlinkService
     bool toRefFound = false;
     private string tempBowPath = null;
     
-    public void HyperlinkMain(string dbFilePath)
+    public void HyperlinkMain(string dbFilePath, string outputFilePath)
     {
-        string bowPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(dbFilePath), "highlighted_BOW.pdf");
-        string dwgPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(dbFilePath), "highlighted_DWG.pdf");
+        string bowPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(outputFilePath), "highlighted_BOW.pdf");
+        string dwgPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(outputFilePath), "highlighted_DWG.pdf");
         
         
         if (!File.Exists(dbFilePath))
