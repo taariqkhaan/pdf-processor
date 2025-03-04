@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCopyrightAttribute("© 2025 Burns & McDonnell. All rights reserved.")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Quality check tool for Souther Company Bill of Wire")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0.0+2d2e8274d8ceabb0708bd218096663805b29ef8b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("2.0.0.0+121acf7edce6b59a039bcd2ea981321612494007")]
 [assembly: System.Reflection.AssemblyProductAttribute("Bill of Wire Quality Check")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BOWQC")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2.0.0.0")]
